@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "app/store": ["./src/app/store"],
+      "app/shared-components": ["./src/app/shared-components"],
+      "app/configs": ["./src/app/configs"],
+      "@mock-api/*": ["./src/@mock-api/*"]
+    }
+  },
+  "include": ["src"]
+}
