@@ -28,6 +28,18 @@ const eventSchema = z.object({
   description: localeObjectSchema.optional(),
   brief: localeObjectSchema.optional(),
   location: localeObjectSchema.optional(),
+  location_description: localeObjectSchema.optional(),
+
+  location_email: z.string().optional(),
+  location_phone: z.string().optional(),
+
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+
+  coordinate_lng: z.union([z.number(), z.string()]).optional().nullable(),
+  coordinate_lat: z.union([z.number(), z.string()]).optional().nullable(),
+
+  volunteers_count: z.union([z.number(), z.string()]).optional().nullable(),
 
   event_type: z.string().optional(),
   event_image: z.string().optional(),
@@ -79,6 +91,14 @@ function Event() {
         description: ensureLocaleValue(event.description),
         brief: ensureLocaleValue(event.brief),
         location: ensureLocaleValue(event.location),
+        location_description: ensureLocaleValue(event.location_description),
+        location_email: event.location_email ?? '',
+        location_phone: event.location_phone ?? '',
+        start_time: event.start_time ?? '',
+        end_time: event.end_time ?? '',
+        coordinate_lng: Array.isArray(event.coordinates) ? (event.coordinates[0] ?? '') : '',
+        coordinate_lat: Array.isArray(event.coordinates) ? (event.coordinates[1] ?? '') : '',
+        volunteers_count: event.volunteers_count ?? '',
         gallery: Array.isArray(event.gallery) ? event.gallery : [],
         speakers: Array.isArray(event.speakers) ? event.speakers : [],
       });
@@ -92,6 +112,19 @@ function Event() {
         description: data.description,
         breif: data.brief,
         location: data.location,
+        location_description: data.location_description,
+        location_email: data.location_email || undefined,
+        location_phone: data.location_phone || undefined,
+        start_time: data.start_time || undefined,
+        end_time: data.end_time || undefined,
+        coordinates:
+          data.coordinate_lng !== '' || data.coordinate_lat !== ''
+            ? [
+                data.coordinate_lng !== '' ? Number(data.coordinate_lng) : null,
+                data.coordinate_lat !== '' ? Number(data.coordinate_lat) : null,
+              ]
+            : undefined,
+        volunteers_count: data.volunteers_count !== '' ? Number(data.volunteers_count) : undefined,
         date: data.date,
         event_type: data.event_type,
         event_image: data.event_image,
@@ -190,7 +223,7 @@ function Event() {
           }}
         >
           <Tab label="Basic Information" />
-          <Tab label="Links & Media" />
+          <Tab label="Location & Media" />
         </Tabs>
 
         <Box>

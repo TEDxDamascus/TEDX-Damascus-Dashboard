@@ -1,5 +1,13 @@
 import { apiService } from 'app/store/apiService';
 
+const toLocale = (v) => {
+  if (v && typeof v === 'object' && ('en' in v || 'ar' in v)) {
+    return { en: String(v.en ?? ''), ar: String(v.ar ?? '') };
+  }
+  if (typeof v === 'string') return { en: v, ar: '' };
+  return { en: '', ar: '' };
+};
+
 const eventsApi = apiService.injectEndpoints({
   endpoints: (builder) => ({
     // GET ALL EVENTS
@@ -46,13 +54,20 @@ const eventsApi = apiService.injectEndpoints({
 
         return {
           id: e._id,
-          title: e.title,
+          title: toLocale(e.title),
           event_image: e.event_image,
           event_type: e.event_type,
           date: e.date?.split('T')[0],
-          location: e.location,
-          description: e.description,
-          brief: e.breif,
+          location: toLocale(e.location),
+          location_email: e.location_email ?? '',
+          location_phone: e.location_phone ?? '',
+          location_description: toLocale(e.location_description),
+          start_time: e.start_time ?? '',
+          end_time: e.end_time ?? '',
+          coordinates: e.coordinates ?? [],
+          volunteers_count: e.volunteers_count ?? '',
+          description: toLocale(e.description),
+          brief: toLocale(e.brief ?? e.breif),
           status: e.status,
           speakers: (e.speakers ?? []).map((s) =>
             typeof s === 'object' && s !== null

@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { useController } from 'react-hook-form';
-import { Grid, Box, Typography, IconButton, Button } from '@mui/material';
+import { useController, Controller } from 'react-hook-form';
+import { Grid, Box, Typography, IconButton, Button, TextField, Divider } from '@mui/material';
 import { Add, DeleteOutline } from '@mui/icons-material';
 import { ImagePickerDialog } from '../../../../shared-components/image-picker';
+import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root.Mui-focused fieldset': { borderColor: 'var(--color-primary)' },
+  '& .MuiInputLabel-root.Mui-focused': { color: 'var(--color-primary)' },
+};
 
 function GalleryPicker({ control, name }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -89,10 +95,142 @@ function GalleryPicker({ control, name }) {
   );
 }
 
-function LinksTab({ control, errors: _errors }) {
+function SectionTitle({ children }) {
+  return (
+    <Grid item xs={12}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+        {children}
+      </Typography>
+      <Divider />
+    </Grid>
+  );
+}
+
+function LinksTab({ control, errors }) {
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
+        {/* ── LOCATION ── */}
+        <SectionTitle>Location</SectionTitle>
+
+        <Grid item xs={12}>
+          <Controller
+            name="location"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textField}
+                label="Location / City"
+                error={!!errors.location}
+                helperText={errors.location?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="location_email"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Location Email"
+                type="email"
+                fullWidth
+                placeholder="location@example.com"
+                error={!!errors.location_email}
+                helperText={errors.location_email?.message}
+                sx={fieldSx}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="location_phone"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Location Phone"
+                fullWidth
+                placeholder="+963980817760"
+                error={!!errors.location_phone}
+                helperText={errors.location_phone?.message}
+                sx={fieldSx}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
+            name="location_description"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textFieldMultiple}
+                label="Location Description"
+                minRows={2}
+                error={!!errors.location_description}
+                helperText={errors.location_description?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* COORDINATES */}
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="coordinate_lng"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Longitude"
+                type="number"
+                fullWidth
+                placeholder="36.2765333"
+                inputProps={{ step: 'any' }}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+                error={!!errors.coordinate_lng}
+                helperText={errors.coordinate_lng?.message}
+                sx={fieldSx}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="coordinate_lat"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Latitude"
+                type="number"
+                fullWidth
+                placeholder="33.5138057"
+                inputProps={{ step: 'any' }}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+                error={!!errors.coordinate_lat}
+                helperText={errors.coordinate_lat?.message}
+                sx={fieldSx}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* ── GALLERY ── */}
+        <SectionTitle>Gallery</SectionTitle>
+
         <Grid item xs={12}>
           <GalleryPicker control={control} name="gallery" />
         </Grid>
