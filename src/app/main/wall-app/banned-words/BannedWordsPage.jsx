@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Chip,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   TextField,
   Paper,
   Typography,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import Breadcrumb from '../../../shared-components/breadcrumb';
 import {
   useAddWallBannedWordMutation,
@@ -26,11 +24,11 @@ function extractItems(raw) {
 }
 
 function BannedWordsPage() {
-  const { data, isLoading } = useGetWallBannedWordsQuery();
+  const { enqueueSnackbar } = useSnackbar();
+  const { data, isLoading, isError } = useGetWallBannedWordsQuery();
   const [addWord, { isLoading: isAdding }] = useAddWallBannedWordMutation();
   const [deleteWord, { isLoading: isDeleting }] = useDeleteWallBannedWordMutation();
   const [word, setWord] = useState('');
-  const [lang, setLang] = useState('all');
 
   const items = extractItems(data);
 
@@ -38,13 +36,23 @@ function BannedWordsPage() {
     e.preventDefault();
     const w = word.trim();
     if (!w) return;
-    await addWord({ word: w, lang });
-    setWord('');
+    try {
+      await addWord({ word: w }).unwrap();
+      setWord('');
+      enqueueSnackbar('Banned word added', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message || 'Failed to add banned word', { variant: 'error' });
+    }
   };
 
   const handleDelete = async (id) => {
     if (!id || !window.confirm('Remove this banned word?')) return;
-    await deleteWord(id);
+    try {
+      await deleteWord(id).unwrap();
+      enqueueSnackbar('Banned word removed', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message || 'Failed to remove banned word', { variant: 'error' });
+    }
   };
 
   return (
@@ -61,7 +69,7 @@ function BannedWordsPage() {
         sx={{ border: '1px solid', borderColor: 'divider' }}
       >
         <Typography variant="subtitle2" className="mb-3 text-gray-600">
-          Add a word to filter (Arabic / English / both). Backend will enforce rules later.
+          Add a word to filter from wall submissions.
         </Typography>
         <Box component="form" onSubmit={handleAdd} className="flex flex-wrap items-end gap-2">
           <TextField
@@ -71,16 +79,8 @@ function BannedWordsPage() {
             onChange={(e) => setWord(e.target.value)}
             sx={{ minWidth: 220 }}
           />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Language</InputLabel>
-            <Select value={lang} label="Language" onChange={(e) => setLang(e.target.value)}>
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="en">English</MenuItem>
-              <MenuItem value="ar">Arabic</MenuItem>
-            </Select>
-          </FormControl>
           <Button type="submit" variant="contained" disabled={isAdding || !word.trim()}>
-            Add
+            {isAdding ? 'Adding…' : 'Add'}
           </Button>
         </Box>
       </Paper>
@@ -90,6 +90,8 @@ function BannedWordsPage() {
           <div className="flex justify-center py-10">
             <CircularProgress size={24} />
           </div>
+        ) : isError ? (
+          <Alert severity="error">Failed to load banned words.</Alert>
         ) : items.length === 0 ? (
           <div className="text-gray-600">No banned words yet.</div>
         ) : (
@@ -97,7 +99,7 @@ function BannedWordsPage() {
             {items.map((row) => (
               <Chip
                 key={row.id}
-                label={`${row.word} (${row.lang})`}
+                label={row.word}
                 onDelete={() => handleDelete(row.id)}
                 disabled={isDeleting}
                 variant="outlined"

@@ -11,13 +11,32 @@ const TABLE_ID = 'wall';
 
 const COLUMNS = [
   {
-    id: 'title',
+    id: 'text',
     header: 'Question',
     renderCell: (v) => (
       <span className="font-medium text-gray-900">
-        {v?.en || v?.ar || <span className="italic text-gray-400">Untitled</span>}
+        {v || <span className="italic text-gray-400">Untitled</span>}
       </span>
     ),
+  },
+  {
+    id: 'tags',
+    header: 'Tags',
+    renderCell: (v) =>
+      Array.isArray(v) && v.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {v.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className="text-gray-400 text-xs italic">—</span>
+      ),
   },
   {
     id: 'status',
@@ -26,18 +45,25 @@ const COLUMNS = [
     renderCell: (v) => <StatusBadge status={v} />,
   },
   {
-    id: 'answersCount',
-    header: 'Answers',
-    sortable: true,
+    id: 'featuredAnswerIds',
+    header: 'Featured',
+    sortable: false,
     renderCell: (v) => (
-      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        {v ?? 0}
+      <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+        {Array.isArray(v) ? v.length : 0}
       </span>
     ),
   },
   {
-    id: 'createdAt',
-    header: 'Created',
+    id: 'publishedAt',
+    header: 'Published',
+    sortable: true,
+    renderCell: (v) =>
+      v ? <span className="text-gray-500">{new Date(v).toLocaleDateString()}</span> : '—',
+  },
+  {
+    id: 'expiresAt',
+    header: 'Expires',
     sortable: true,
     renderCell: (v) =>
       v ? <span className="text-gray-500">{new Date(v).toLocaleDateString()}</span> : '—',
@@ -64,13 +90,13 @@ function WallListTable({ data, totalCount, isLoading }) {
     {
       icon: <Edit style={{ fontSize: 18 }} />,
       title: 'Edit & Answers',
-      onClick: () => navigate(`/wall/${row.id}`),
+      onClick: (e) => { e.stopPropagation(); navigate(`/wall/${row.id}`, { state: { question: row } }); },
     },
     {
       icon: <DeleteOutline style={{ fontSize: 18 }} />,
       title: 'Delete',
       danger: true,
-      onClick: () => setConfirmItem(row),
+      onClick: (e) => { e.stopPropagation(); setConfirmItem(row); },
     },
   ];
 
@@ -83,6 +109,7 @@ function WallListTable({ data, totalCount, isLoading }) {
         totalCount={totalCount}
         isLoading={isLoading}
         rowActions={actions}
+        onRowClick={(row) => navigate(`/wall/${row.id}`, { state: { question: row } })}
         emptyMessage="No wall questions yet. Add one to get started."
       />
 
@@ -91,7 +118,7 @@ function WallListTable({ data, totalCount, isLoading }) {
         onClose={() => setConfirmItem(null)}
         onConfirm={handleDelete}
         title="Delete Question"
-        description={`Delete "${confirmItem?.title?.en || confirmItem?.title?.ar || 'this question'}" and all its answers? This cannot be undone.`}
+        description={`Delete "${confirmItem?.text || 'this question'}" and all its answers? This cannot be undone.`}
       />
     </>
   );
