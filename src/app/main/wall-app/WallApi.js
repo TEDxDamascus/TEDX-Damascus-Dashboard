@@ -1,12 +1,12 @@
 import { apiService } from 'app/store/apiService';
 
-export const addTagTypes = ['WallQuestions', 'WallQuestion', 'WallBannedWords'];
+export const addTagTypes = ['WallQuestions', 'WallQuestion', 'WallAnswers', 'WallBannedWords'];
 
 const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getWallQuestions: builder.query({
       query: ({ page = 1, limit = 20, status } = {}) => ({
-        url: '/wall/questions',
+        url: '/wall-cards/questions',
         method: 'GET',
         params: { page, limit, ...(status ? { status } : {}) },
       }),
@@ -24,15 +24,24 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
         return {
           items: items.map((q) => ({
             id: q._id || q.id,
-            title: q.title,
+            text: q.text,
+            tags: Array.isArray(q.tags) ? q.tags : [],
             status: q.status ?? 'draft',
-            answersCount:
-              q.answers_count ??
-              q.answersCount ??
-              (Array.isArray(q.answers) ? q.answers.length : 0),
+            // featured answers are now returned from the Answers API (data.featuredAnswers)
+            // Do not rely on question payload for featuredAnswerIds anymore.
+            expiresAt: q.expiresAt,
+            publishedAt: q.publishedAt,
+            archivedAt: q.archivedAt ?? null,
+            replacedByQuestionId: q.replacedByQuestionId ?? null,
             createdAt: q.createdAt,
+            updatedAt: q.updatedAt,
           })),
-          total: response?.total ?? response?.data?.total ?? items.length,
+          total: raw?.total ?? items.length,
+          page: raw?.page ?? 1,
+          limit: raw?.limit ?? 10,
+          totalPages: raw?.totalPages ?? 1,
+          hasNextPage: raw?.hasNextPage ?? false,
+          hasPreviousPage: raw?.hasPreviousPage ?? false,
         };
       },
       providesTags: ['WallQuestions'],
@@ -40,7 +49,7 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 
     getWallQuestion: builder.query({
       query: (questionId) => ({
-        url: `/wall/questions/${questionId}`,
+        url: `/wall-cards/questions/${questionId}`,
         method: 'GET',
       }),
       providesTags: (result, error, questionId) => [{ type: 'WallQuestion', id: questionId }],
@@ -48,7 +57,7 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 
     createWallQuestion: builder.mutation({
       query: (data) => ({
-        url: '/wall/questions',
+        url: '/wall-cards/questions/publish',
         method: 'POST',
         data,
       }),
@@ -57,7 +66,7 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 
     updateWallQuestion: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/wall/questions/${id}`,
+        url: `/wall-cards/questions/${id}`,
         method: 'PATCH',
         data,
       }),
@@ -66,7 +75,7 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 
     deleteWallQuestion: builder.mutation({
       query: (id) => ({
-        url: `/wall/questions/${id}`,
+        url: `/wall-cards/questions/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['WallQuestions'],
@@ -84,13 +93,42 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
       ],
     }),
 
-    updateWallAnswerStatus: builder.mutation({
-      query: ({ questionId, answerId, status }) => ({
-        url: `/wall/questions/${questionId}/answers/${answerId}`,
-        method: 'PATCH',
-        data: { status },
+    getPendingAnswers: builder.query({
+      query: ({ page = 1, limit = 10 } = {}) => ({
+        url: '/wall-cards/answers/pending',
+        method: 'GET',
+        params: { page, limit },
       }),
-      invalidatesTags: (r, e, { questionId }) => [{ type: 'WallQuestion', id: questionId }],
+      providesTags: ['WallAnswers'],
+    }),
+
+    getQuestionAnswers: builder.query({
+      query: ({ questionId, page = 1, limit = 20 } = {}) => ({
+        url: `/wall-cards/questions/${questionId}/answers`,
+        method: 'GET',
+        params: { page, limit },
+      }),
+      providesTags: (result, error, { questionId }) => [
+        { type: 'WallAnswers', id: questionId },
+      ],
+    }),
+
+    moderateWallAnswer: builder.mutation({
+      query: ({ answerId, action }) => ({
+        url: `/wall-cards/answers/${answerId}/moderate`,
+        method: 'PATCH',
+        data: { action }, // "approve" | "decline"
+      }),
+      invalidatesTags: ['WallAnswers', 'WallQuestions'],
+    }),
+
+    setActiveFeaturedAnswers: builder.mutation({
+      query: (answerIds) => ({
+        url: '/wall-cards/questions/active/featured-answers',
+        method: 'PUT',
+        data: { answerIds },
+      }),
+      invalidatesTags: ['WallQuestions', 'WallAnswers'],
     }),
 
     setWallAnswerFeatured: builder.mutation({
@@ -111,24 +149,24 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 
     getWallBannedWords: builder.query({
       query: () => ({
-        url: '/wall/banned-words',
+        url: '/wall-cards/blocked-words',
         method: 'GET',
       }),
       providesTags: ['WallBannedWords'],
     }),
 
     addWallBannedWord: builder.mutation({
-      query: ({ word, lang }) => ({
-        url: '/wall/banned-words',
+      query: ({ word }) => ({
+        url: '/wall-cards/blocked-words',
         method: 'POST',
-        data: { word, lang },
+        data: { word },
       }),
       invalidatesTags: ['WallBannedWords'],
     }),
 
     deleteWallBannedWord: builder.mutation({
       query: (id) => ({
-        url: `/wall/banned-words/${id}`,
+        url: `/wall-cards/blocked-words/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['WallBannedWords'],
@@ -144,7 +182,10 @@ export const {
   useUpdateWallQuestionMutation,
   useDeleteWallQuestionMutation,
   useCreateWallAnswerMutation,
-  useUpdateWallAnswerStatusMutation,
+  useGetPendingAnswersQuery,
+  useGetQuestionAnswersQuery,
+  useModerateWallAnswerMutation,
+  useSetActiveFeaturedAnswersMutation,
   useSetWallAnswerFeaturedMutation,
   useDeleteWallAnswerMutation,
   useGetWallBannedWordsQuery,

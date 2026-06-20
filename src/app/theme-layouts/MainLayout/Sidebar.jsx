@@ -40,7 +40,7 @@ const menuItems = [
   { text: 'Organizers', icon: <ManageAccountsIcon />, path: '/organizers' },
   { text: 'Forms', icon: <Assignment />, path: '/forms' },
   { text: 'Events', icon: <Event />, path: '/events' },
-  // { text: 'Wall', icon: <Forum />, path: '/wall' },
+   { text: 'Wall', icon: <Forum />, path: '/wall' },
   { text: 'Blog', icon: <Article />, path: '/blogs' },
   { text: 'Blog categories', icon: <LabelOutlined />, path: '/blogs/categories' },
   // { text: 'Home Settings', icon: <Settings />, path: '/settings' },

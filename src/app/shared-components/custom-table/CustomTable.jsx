@@ -205,6 +205,7 @@ export default function CustomTable({
   isLoading = false,
   rowActions,
   onBulkDelete,
+  onRowClick,
   getRowId = (row) => row.id,
   emptyMessage = 'No results found.',
   bulkDeleteLabel,
@@ -325,9 +326,11 @@ export default function CustomTable({
                 return (
                   <tr
                     key={rowId}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
                     className={[
                       'border-b border-gray-100 transition-colors',
                       isSelected ? 'bg-red-50' : 'hover:bg-gray-50',
+                      onRowClick ? 'cursor-pointer hover:bg-red-50/40' : '',
                     ].join(' ')}
                   >
                     {hasBulk && (
@@ -359,7 +362,7 @@ export default function CustomTable({
                           {actions.map((action, i) => (
                             <button
                               key={i}
-                              onClick={action.onClick}
+                              onClick={(e) => { e.stopPropagation(); action.onClick?.(e); }}
                               title={action.title || action.label}
                               disabled={action.disabled}
                               className={[
