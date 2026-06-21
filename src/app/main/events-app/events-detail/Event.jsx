@@ -101,18 +101,27 @@ function Event() {
         volunteers_count: event.volunteers_count ?? '',
         gallery: Array.isArray(event.gallery) ? event.gallery : [],
         speakers: Array.isArray(event.speakers) ? event.speakers : [],
+        event_type: event.event_type ?? '',
+        event_image: event.event_image ?? '',
+        status: event.status ?? 'draft',
       });
     }
   }, [event, isNew, reset]);
 
   const onSubmit = async (data) => {
     try {
+      // Only include `ar` when it has a value — never overwrite backend Arabic with an empty string
+      const localeField = (obj) => ({
+        en: obj?.en ?? '',
+        ...(obj?.ar?.trim() ? { ar: obj.ar } : {}),
+      });
+
       const payload = {
-        title: data.title,
-        description: data.description,
-        breif: data.brief,
-        location: data.location,
-        location_description: data.location_description,
+        title: localeField(data.title),
+        description: localeField(data.description),
+        breif: localeField(data.brief),
+        location: localeField(data.location),
+        location_description: localeField(data.location_description),
         location_email: data.location_email || undefined,
         location_phone: data.location_phone || undefined,
         start_time: data.start_time || undefined,
@@ -126,11 +135,11 @@ function Event() {
             : undefined,
         volunteers_count: data.volunteers_count !== '' ? Number(data.volunteers_count) : undefined,
         date: data.date,
-        event_type: data.event_type,
-        event_image: data.event_image,
+        event_type: data.event_type || undefined,
+        event_image: data.event_image || undefined,
         gallery: data.gallery ?? [],
         speakers: (data.speakers ?? []).map((s) => s.id ?? s),
-        status: data.status,
+        status: data.status || undefined,
       };
 
       if (isNew) {
