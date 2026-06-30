@@ -16,6 +16,7 @@ import Breadcrumb from '../../../shared-components/breadcrumb';
 import { useGetBlogQuery } from '../BlogsApi';
 import { mapBlogFromApi } from './blogMapper';
 import { mediaFormValueToPreviewSrc } from '../../../shared-components/image-picker';
+import RichTextContent from '../../../shared-components/rich-text-editor/RichTextContent';
 
 function getLocalizedText(value, loc = 'en') {
   if (!value) return '';
@@ -175,14 +176,9 @@ function BlogView() {
         <Typography variant="overline" color="text.secondary">
           Content
         </Typography>
-        <Typography
-          variant="body1"
-          component="div"
-          dir={locale === 'ar' ? 'rtl' : 'ltr'}
-          sx={{ whiteSpace: 'pre-wrap', mt: 1, lineHeight: 1.7 }}
-        >
-          {content.trim() ? content : '—'}
-        </Typography>
+        <Box sx={{ mt: 1, lineHeight: 1.7 }}>
+          <RichTextContent html={content} dir={locale === 'ar' ? 'rtl' : 'ltr'} />
+        </Box>
       </Paper>
 
       {Array.isArray(blog.tags) && blog.tags.length > 0 && (
