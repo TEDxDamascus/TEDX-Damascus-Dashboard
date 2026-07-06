@@ -76,16 +76,33 @@ function BasicInfoTab({ control, errors }) {
 
         <Grid item xs={12}>
           <Controller
-            name="description"
+            name="short_description"
             control={control}
             render={({ field }) => (
               <LocaleInput
                 {...field}
                 type={localeInputTypes.textFieldMultiple}
-                label="Partner Description"
+                label="Short Description"
+                minRows={2}
+                error={!!errors.short_description}
+                helperText={errors.short_description?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
+            name="long_description"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textFieldMultiple}
+                label="Long Description"
                 minRows={4}
-                error={!!errors.description}
-                helperText={errors.description?.message}
+                error={!!errors.long_description}
+                helperText={errors.long_description?.message}
               />
             )}
           />
