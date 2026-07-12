@@ -1,22 +1,52 @@
 import { Controller } from 'react-hook-form';
-import { TextField, Grid, Box } from '@mui/material';
+import { TextField, Grid, Box, Typography } from '@mui/material';
+import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
 
 function SocialLinksTab({ control, errors }) {
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
+          <Typography variant="h6" className="mb-2 text-gray-700 font-medium">
+            Social Links
+          </Typography>
+        </Grid>
+        
+        <Grid item xs={12}>
           <Controller
-            name="website_url"
+            name="social_links.0"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Company Website"
+                label="Website URL"
                 fullWidth
                 placeholder="https://example.com"
-                error={!!errors.website_url}
-                helperText={errors.website_url?.message}
+                error={!!errors.social_links?.[0]}
+                helperText={errors.social_links?.[0]?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} className="mt-4">
+          <Typography variant="h6" className="mb-2 text-gray-700 font-medium">
+            Contact Information
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="contact_info.email"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Email Address"
+                fullWidth
+                placeholder="info@example.com"
+                error={!!errors.contact_info?.email}
+                helperText={errors.contact_info?.email?.message}
               />
             )}
           />
@@ -24,50 +54,32 @@ function SocialLinksTab({ control, errors }) {
 
         <Grid item xs={12} md={6}>
           <Controller
-            name="instagram_url"
+            name="contact_info.phone"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Instagram Profile"
+                label="Phone Number"
                 fullWidth
-                placeholder="https://instagram.com/username"
-                error={!!errors.instagram_url}
-                helperText={errors.instagram_url?.message}
+                placeholder="+963115554433"
+                error={!!errors.contact_info?.phone}
+                helperText={errors.contact_info?.phone?.message}
               />
             )}
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Controller
-            name="linkedin_url"
+            name="contact_info.address"
             control={control}
             render={({ field }) => (
-              <TextField
+              <LocaleInput
                 {...field}
-                label="LinkedIn Company Page"
-                fullWidth
-                placeholder="https://linkedin.com/company/name"
-                error={!!errors.linkedin_url}
-                helperText={errors.linkedin_url?.message}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="facebook_url"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Facebook Page"
-                fullWidth
-                placeholder="https://facebook.com/username"
-                error={!!errors.facebook_url}
-                helperText={errors.facebook_url?.message}
+                type={localeInputTypes.textField}
+                label="Address"
+                error={!!errors.contact_info?.address}
+                helperText={errors.contact_info?.address?.message}
               />
             )}
           />

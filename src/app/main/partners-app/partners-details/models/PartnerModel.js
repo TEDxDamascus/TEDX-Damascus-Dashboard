@@ -3,13 +3,17 @@ import { defaultLocaleValue } from '../../../../shared-components/locale-input';
 const PartnerModel = () => ({
   name: defaultLocaleValue(),
   slug: defaultLocaleValue(),
-  description: defaultLocaleValue(),
-  image: '',
+  image: '', 
   partnership_type: '',
-  website_url: '',
-  instagram_url: '',
-  linkedin_url: '',
-  facebook_url: '',
+  short_description: defaultLocaleValue(),
+  long_description: defaultLocaleValue(),
+  social_links: [''], 
+  contact_info: {
+    address: defaultLocaleValue(),
+    phone: '',
+    email: '',
+  },
+  services: [], 
 });
 
 export default PartnerModel;

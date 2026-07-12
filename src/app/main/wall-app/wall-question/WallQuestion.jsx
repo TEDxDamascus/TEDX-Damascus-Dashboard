@@ -76,7 +76,7 @@ function StatusChip({ status }) {
   );
 }
 
-const MAX_FEATURED = 3;
+const MAX_FEATURED = 4;
 
 /* ─── component ──────────────────────────────────────────── */
 export default function WallQuestion() {

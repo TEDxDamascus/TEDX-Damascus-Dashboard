@@ -1,3 +1,4 @@
+//partnerApi.js
 import { apiService } from 'app/store/apiService';
 
 export const addTagTypes = ['Partners', 'Partner'];

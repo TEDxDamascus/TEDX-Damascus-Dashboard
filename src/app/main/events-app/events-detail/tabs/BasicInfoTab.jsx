@@ -1,7 +1,8 @@
 import { Controller } from 'react-hook-form';
-import { Grid, Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Grid, Box, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
 
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 
 import { parse, format, isValid } from 'date-fns';
 
@@ -38,6 +39,7 @@ const EVENT_TYPES = [
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
@@ -138,18 +140,84 @@ function BasicInfoTab({ control, errors }) {
           />
         </Grid>
 
-        {/* LOCATION */}
-        <Grid item xs={12}>
+        {/* START TIME */}
+        <Grid item xs={12} md={4}>
           <Controller
-            name="location"
+            name="start_time"
+            control={control}
+            render={({ field }) => {
+              const timeValue = field.value
+                ? (() => {
+                    const d = parse(field.value, 'hh:mm a', new Date());
+                    return isValid(d) ? d : null;
+                  })()
+                : null;
+
+              return (
+                <TimePicker
+                  label="Start Time"
+                  value={timeValue}
+                  onChange={(newTime) =>
+                    field.onChange(newTime && isValid(newTime) ? format(newTime, 'hh:mm a') : '')
+                  }
+                  slotProps={{ textField: { fullWidth: true } }}
+                  sx={pickerSx}
+                />
+              );
+            }}
+          />
+        </Grid>
+
+        {/* END TIME */}
+        <Grid item xs={12} md={4}>
+          <Controller
+            name="end_time"
+            control={control}
+            render={({ field }) => {
+              const timeValue = field.value
+                ? (() => {
+                    const d = parse(field.value, 'hh:mm a', new Date());
+                    return isValid(d) ? d : null;
+                  })()
+                : null;
+
+              return (
+                <TimePicker
+                  label="End Time"
+                  value={timeValue}
+                  onChange={(newTime) =>
+                    field.onChange(newTime && isValid(newTime) ? format(newTime, 'hh:mm a') : '')
+                  }
+                  slotProps={{ textField: { fullWidth: true } }}
+                  sx={pickerSx}
+                />
+              );
+            }}
+          />
+        </Grid>
+
+        {/* VOLUNTEERS COUNT */}
+        <Grid item xs={12} md={4}>
+          <Controller
+            name="volunteers_count"
             control={control}
             render={({ field }) => (
-              <LocaleInput
+              <TextField
                 {...field}
-                type={localeInputTypes.textField}
-                label="Location / City"
-                error={!!errors.location}
-                helperText={errors.location?.message}
+                label="Volunteers Count"
+                type="number"
+                fullWidth
+                inputProps={{ min: 0, step: 1 }}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+                error={!!errors.volunteers_count}
+                helperText={errors.volunteers_count?.message}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-focused fieldset': {
+                    borderColor: 'var(--color-primary)',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: 'var(--color-primary)' },
+                }}
               />
             )}
           />

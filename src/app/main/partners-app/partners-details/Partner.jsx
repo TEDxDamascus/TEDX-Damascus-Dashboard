@@ -14,21 +14,36 @@ import {
 } from '../PartnersApi';
 import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
+import ServicesTab from './tabs/ServicesTab';
 import PartnerModel from './models/PartnerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
 
+const servicesSchema = z.object({
+  title: z.string().min(1, 'Service title is required'),
+  description: localeObjectSchema.refine(
+    (v) => v?.en?.trim() || v?.ar?.trim(),
+    'Description is required',
+  ),
+});
+
 const partnerSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
   slug: localeObjectSchema.optional(),
-  description: localeObjectSchema.optional(),
-  image: z.string().optional(),
+  image: z.string().optional(), 
   partnership_type: z.string().min(1, 'Partnership type is required'),
-  website_url: z.string().optional(),
-  instagram_url: z.string().optional(),
-  linkedin_url: z.string().optional(),
-  facebook_url: z.string().optional(),
+  short_description: localeObjectSchema.optional(),
+  long_description: localeObjectSchema.optional(),
+  social_links: z.array(z.string().optional()).optional(),
+  contact_info: z
+    .object({
+      email: z.string().email('Invalid email address').or(z.literal('')),
+      phone: z.string().optional(),
+      address: localeObjectSchema.optional(),
+    })
+    .optional(),
+  services: z.array(servicesSchema).optional(), 
 });
 
 function Partner() {
@@ -47,6 +62,7 @@ function Partner() {
     control,
     handleSubmit,
     reset,
+    register,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(partnerSchema),
@@ -55,60 +71,71 @@ function Partner() {
 
   useEffect(() => {
     if (partner && !isNew) {
-      const links = Array.isArray(partner.social_links) ? partner.social_links : [];
-      const website_url =
-        links.find(
-          (u) => !u.includes('instagram') && !u.includes('linkedin') && !u.includes('facebook'),
-        ) ?? '';
-      const instagram_url = links.find((u) => u.includes('instagram')) ?? '';
-      const linkedin_url = links.find((u) => u.includes('linkedin')) ?? '';
-      const facebook_url = links.find((u) => u.includes('facebook')) ?? '';
-
       reset({
         name: ensureLocaleValue(partner.name),
         slug: ensureLocaleValue(partner.slug),
-        description: ensureLocaleValue(partner.description),
-        image: partner.image || '',
+        image: partner.image || '', 
         partnership_type: partner.partnership_type || '',
-        website_url,
-        instagram_url,
-        linkedin_url,
-        facebook_url,
+        short_description: ensureLocaleValue(partner.short_description),
+        long_description: ensureLocaleValue(partner.long_description),
+        social_links: Array.isArray(partner.social_links) ? partner.social_links : [''],
+        contact_info: {
+          email: partner.contact_info?.email || '',
+          phone: partner.contact_info?.phone || '',
+          address: ensureLocaleValue(partner.contact_info?.address),
+        },
+        services: Array.isArray(partner.services)
+          ? partner.services.map((s) => ({
+              title: s.title || '',
+              description: ensureLocaleValue(s.description),
+            }))
+          : [],
       });
     }
   }, [partner, isNew, reset]);
 
-  const onSubmit = async (formData) => {
-    try {
-      const socialLinks = [
-        formData.website_url,
-        formData.instagram_url,
-        formData.linkedin_url,
-        formData.facebook_url,
-      ].filter((u) => u?.trim());
+const onSubmit = async (formData) => {
+  try {
+    const cleanedSocialLinks = (formData.social_links || [])
+      .map(link => typeof link === 'string' ? link.trim() : '')
+      .filter(link => link !== '');
 
-      const payload = {
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description,
-        partnership_type: formData.partnership_type,
-      };
+    const payload = {
+      name: formData.name,
+      slug: formData.slug,
+      partnership_type: formData.partnership_type,
+      short_description: formData.short_description,
+      long_description: formData.long_description,
+      social_links: cleanedSocialLinks,
+      contact_info: {
+        email: formData.contact_info?.email || '',
+        phone: formData.contact_info?.phone || '',
+        address: formData.contact_info?.address,
+      },
+      services: formData.services || [], 
+    };
 
-      if (formData.image) payload.image = formData.image;
-      if (socialLinks.length) payload.social_links = socialLinks;
+    const originalImageId = partner?.image && typeof partner.image === 'object' ? partner.image._id : partner.image;
+    
+    const currentImageId = formData.image && typeof formData.image === 'object' ? formData.image._id : formData.image;
 
-      if (isNew) {
-        await createPartner(payload).unwrap();
-        enqueueSnackbar('Partner created successfully', { variant: 'success' });
-      } else {
-        await updatePartner({ id: partnerId, data: payload }).unwrap();
-        enqueueSnackbar('Partner updated successfully', { variant: 'success' });
-      }
-      navigate('/partners');
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} partner`, { variant: 'error' });
+    if (currentImageId && currentImageId !== originalImageId && currentImageId.trim() !== '') {
+      payload.image = currentImageId;
     }
-  };
+  
+    if (isNew) {
+      await createPartner(payload).unwrap();
+      enqueueSnackbar('Partner created successfully', { variant: 'success' });
+    } else {
+      await updatePartner({ id: partnerId, data: payload }).unwrap();
+      enqueueSnackbar('Partner updated successfully', { variant: 'success' });
+    }
+    navigate('/partners');
+  } catch (error) {
+    console.error('Update failed:', error);
+    enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} partner`, { variant: 'error' });
+  }
+};
 
   if (isLoading) {
     return (
@@ -170,11 +197,15 @@ function Partner() {
           }}
         >
           <Tab label="Partner Information" />
-          <Tab label="Social Links" />
+          <Tab label="Social & Contact Links" />
+          <Tab label="Services (Optional)" />
         </Tabs>
         <Box>
           {currentTab === 0 && <BasicInfoTab control={control} errors={errors} />}
           {currentTab === 1 && <SocialLinksTab control={control} errors={errors} />}
+          {currentTab === 2 && (
+            <ServicesTab control={control} register={register} errors={errors} />
+          )}
         </Box>
       </Paper>
     </div>
