@@ -15,17 +15,19 @@ import {
   useCreateBlogReferenceMutation,
   useDeleteBlogReferenceMutation,
   useGetBlogQuery,
+  useGetBlogFontsQuery,
+  useGetBlogAuthorOptionsQuery,
   useGetBlogReferencesByBlogQuery,
   useUpdateBlogMutation,
   useUpdateBlogReferenceMutation,
 } from '../BlogsApi';
 import { searchBlogOptions } from '../BlogsApi';
-import { searchUserOptions } from '../../users-app/UsersApi';
 import { searchBlogCategoryOptions } from '../blog-categories/BlogCategoriesApi';
 import { blogReferencesFromApi, mapBlogFromApi, mapBlogReferenceApiItemToForm } from './blogMapper';
+import { ensureContentFont, contentFontToApiString } from './blogFontUtils';
+import { buildAuthorApiPayload } from './blogAuthorUtils';
 import {
   mediaFormValueToApiId,
-  isLikelyMongoObjectId,
 } from '../../../shared-components/image-picker';
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
@@ -45,11 +47,17 @@ const blogSchema = z.object({
   blog_image: z.union([mediaRefSchema, z.string()]).optional(),
   read_time: z.coerce.number().min(0).optional(),
   tags: z.array(z.string()).optional(),
-  author_user: z.union([z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
+  author_type: z.enum(['', 'admin', 'external']).optional(),
+  author_admin: z.union([z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
+  author_name: localeObjectSchema.optional(),
+  author_description: localeObjectSchema.optional(),
+  author_image: z.union([mediaRefSchema, z.string()]).optional(),
+  author_image_url: z.string().optional(),
   blog_category: z.union([z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
   related_blogs: z.array(z.any()).optional(),
   description: localeObjectSchema,
   content: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Content is required'),
+  content_font: localeObjectSchema.optional(),
   status: z.enum(['draft', 'published']).optional(),
   meta_title: localeObjectSchema,
   meta_description: localeObjectSchema,
@@ -190,7 +198,7 @@ async function syncBlogReferencesWithServer({
 }
 
 /** Payload shape expected by POST/PUT `/blogs` (TedX backend). */
-function buildBlogApiPayload(data) {
+function buildBlogApiPayload(data, defaultContentFont = 'cairo') {
   const status = data.status || 'draft';
   const title = sanitizeLocaleObject(data.title);
   const content = sanitizeLocaleObject(data.content);
@@ -199,6 +207,7 @@ function buildBlogApiPayload(data) {
   const payload = {
     title,
     content,
+    content_font: contentFontToApiString(data.content_font, defaultContentFont),
     status,
     description,
     tags: tagsFlatToLocalized(data.tags),
@@ -212,6 +221,7 @@ function buildBlogApiPayload(data) {
     related_blogs_ids: (data.related_blogs || [])
       .map((item) => item?.id ?? item?.value)
       .filter(Boolean),
+    ...buildAuthorApiPayload(data, sanitizeLocaleObject),
   };
 
   if (status === 'published') {
@@ -225,11 +235,6 @@ function buildBlogApiPayload(data) {
 
   if (data.blog_category?.id) {
     payload.category_id = String(data.blog_category.id);
-  }
-
-  const uid = data.author_user?.id && isLikelyMongoObjectId(String(data.author_user.id).trim());
-  if (uid) {
-    payload.user_id = String(data.author_user.id).trim();
   }
 
   const blogImgId = mediaFormValueToApiId(data.blog_image);
@@ -273,6 +278,10 @@ function Blog() {
     skip: isNew || !blogId,
   });
 
+  const { data: blogFonts, isLoading: fontsLoading } = useGetBlogFontsQuery();
+  const { isLoading: authorOptionsLoading } = useGetBlogAuthorOptionsQuery();
+  const defaultContentFont = blogFonts?.default || 'cairo';
+
   const lastHydratedBlogIdRef = useRef(null);
   const initialReferenceIdsRef = useRef(new Set());
 
@@ -300,7 +309,19 @@ function Blog() {
   }, [blogId]);
 
   useEffect(() => {
-    if (isNew || !blogData || !blogId) return;
+    if (!blogFonts) return;
+
+    if (isNew) {
+      if (lastHydratedBlogIdRef.current === 'new') return;
+      reset({
+        ...BlogModel(),
+        content_font: ensureContentFont(null, defaultContentFont),
+      });
+      lastHydratedBlogIdRef.current = 'new';
+      return;
+    }
+
+    if (!blogData || !blogId) return;
     if (!refsQuerySettled) return;
     if (lastHydratedBlogIdRef.current === blogId) return;
 
@@ -314,7 +335,11 @@ function Blog() {
 
     const base = mapBlogFromApi(blogData);
     const { blog_references: _drop, ...rest } = base;
-    reset({ ...rest, blog_references: mapped });
+    reset({
+      ...rest,
+      content_font: ensureContentFont(base.content_font, defaultContentFont),
+      blog_references: mapped,
+    });
     initialReferenceIdsRef.current = new Set(
       mapped
         .map((r) => r.reference_id)
@@ -322,7 +347,17 @@ function Blog() {
         .map(String),
     );
     lastHydratedBlogIdRef.current = blogId;
-  }, [isNew, blogId, blogData, refsQuerySettled, refQuery.isError, refQuery.data, reset]);
+  }, [
+    isNew,
+    blogId,
+    blogData,
+    refsQuerySettled,
+    refQuery.isError,
+    refQuery.data,
+    blogFonts,
+    defaultContentFont,
+    reset,
+  ]);
 
   const currentReadTime = useWatch({ control, name: 'read_time' });
 
@@ -334,7 +369,11 @@ function Blog() {
   const fetchRelatedBlogsOptions = (query) => searchBlogOptions(query, { excludeId: blogId });
 
   const onSubmit = async (data) => {
-    const payload = buildBlogApiPayload(data);
+    const payload = buildBlogApiPayload(data, defaultContentFont);
+
+    if (import.meta.env.DEV) {
+      console.log('[Blog] submit payload:', payload);
+    }
 
     try {
       if (isNew) {
@@ -479,8 +518,10 @@ function Blog() {
             onGenerateSlug={handleGenerateSlug}
             slugPreviewBase="/blogs"
             fetchRelatedBlogsOptions={fetchRelatedBlogsOptions}
-            fetchUserOptions={searchUserOptions}
             fetchCategoryOptions={searchBlogCategoryOptions}
+            blogFonts={blogFonts}
+            fontsLoading={fontsLoading}
+            authorOptionsLoading={authorOptionsLoading}
           />
         </Box>
       </Paper>

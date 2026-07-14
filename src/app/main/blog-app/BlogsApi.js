@@ -1,7 +1,8 @@
 import { apiService } from 'app/store/apiService';
 import axiosInstance from '../../services/axiosInstance';
+import { authorOptionsFromApi } from './blog-detail/blogAuthorUtils';
 
-export const addTagTypes = ['Blogs', 'Blog', 'BlogReferences', 'BlogReference'];
+export const addTagTypes = ['Blogs', 'Blog', 'BlogReferences', 'BlogReference', 'BlogFonts', 'BlogAuthorOptions'];
 
 function matchBlogId(blog, id) {
   return String(blog.id) === String(id) || String(blog._id) === String(id);
@@ -76,6 +77,25 @@ function invalidateBlogReferenceTags(blogId, referenceId) {
   return tags;
 }
 
+export async function searchBlogAuthorOptions(query) {
+  try {
+    const { data: body } = await axiosInstance({ url: '/blogs/author-options', method: 'get' });
+    const list = authorOptionsFromApi(body);
+    const term = String(query || '')
+      .trim()
+      .toLowerCase();
+    return list
+      .filter((item) => {
+        if (!term) return true;
+        const blob = [item.label, item.id, item.imageUrl].join(' ').toLowerCase();
+        return blob.includes(term);
+      })
+      .slice(0, 20);
+  } catch {
+    return [];
+  }
+}
+
 const blogsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getBlogs: builder.query({
@@ -109,6 +129,31 @@ const blogsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
     getBlog: builder.query({
       query: (blogId) => ({ url: `/blogs/${blogId}`, method: 'get' }),
       providesTags: (result, error, blogId) => [{ type: 'Blog', id: blogId }],
+    }),
+
+    /** GET `/public/blogs/fonts` — available content font families. */
+    getBlogFonts: builder.query({
+      query: () => ({ url: '/public/blogs/fonts', method: 'get' }),
+      transformResponse: (response) => {
+        const d = response?.data ?? {};
+        return {
+          default: String(d.default || 'cairo').trim() || 'cairo',
+          options: Array.isArray(d.options)
+            ? d.options.map((opt) => ({
+                value: String(opt.value || '').trim(),
+                label: String(opt.label || opt.value || '').trim(),
+              }))
+            : [],
+        };
+      },
+      providesTags: ['BlogFonts'],
+    }),
+
+    /** GET `/blogs/author-options` — existing authors for blog articles. */
+    getBlogAuthorOptions: builder.query({
+      query: () => ({ url: '/blogs/author-options', method: 'get' }),
+      transformResponse: (response) => authorOptionsFromApi(response),
+      providesTags: ['BlogAuthorOptions'],
     }),
 
     createBlog: builder.mutation({
@@ -199,6 +244,8 @@ const blogsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 export const {
   useGetBlogsQuery,
   useGetBlogQuery,
+  useGetBlogFontsQuery,
+  useGetBlogAuthorOptionsQuery,
   useCreateBlogMutation,
   useUpdateBlogMutation,
   useDeleteBlogMutation,

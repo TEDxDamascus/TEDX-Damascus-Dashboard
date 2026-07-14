@@ -14,6 +14,10 @@ import {
   Chip,
   LinearProgress,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  CircularProgress,
 } from '@mui/material';
 import { ExpandMore, Add, DeleteOutline } from '@mui/icons-material';
 import {
@@ -27,6 +31,28 @@ import {
   mediaFormValueToPreviewSrc,
 } from '../../../../shared-components/image-picker';
 import { CustomAutocomplete } from '../../../../shared-components/custom-autocomplete';
+import AuthorSection from './AuthorSection';
+import { blogFontValueToCssFamily } from '../blogFontUtils';
+
+function ContentFontSelect({ value, onChange, options, label, disabled, error, helperText }) {
+  return (
+    <FormControl fullWidth size="small" error={error} disabled={disabled} sx={{ mb: 1.5 }}>
+      <InputLabel>{label}</InputLabel>
+      <Select label={label} value={value || ''} onChange={(e) => onChange(e.target.value)}>
+        {options.map((opt) => (
+          <MenuItem key={opt.value} value={opt.value} sx={{ fontFamily: blogFontValueToCssFamily(opt.value) }}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </Select>
+      {helperText && (
+        <Typography variant="caption" color={error ? 'error' : 'text.secondary'} sx={{ mt: 0.5, mx: 1.75 }}>
+          {helperText}
+        </Typography>
+      )}
+    </FormControl>
+  );
+}
 
 function BlogContentSeoTab({
   control,
@@ -34,8 +60,10 @@ function BlogContentSeoTab({
   onGenerateSlug,
   slugPreviewBase = '/blog',
   fetchRelatedBlogsOptions,
-  fetchUserOptions,
   fetchCategoryOptions,
+  blogFonts,
+  fontsLoading,
+  authorOptionsLoading,
 }) {
   const titleValue = useWatch({ control, name: 'title' });
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -312,21 +340,10 @@ function BlogContentSeoTab({
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <Controller
-            name="author_user"
+          <AuthorSection
             control={control}
-            render={({ field }) => (
-              <CustomAutocomplete
-                {...field}
-                value={field.value ?? null}
-                scope="blog-author-user"
-                fetchOptions={fetchUserOptions}
-                label="Author (user)"
-                placeholder="Search users..."
-                helperText="Optional. Link this article to a dashboard user as author."
-                error={errors.author_user}
-              />
-            )}
+            errors={errors}
+            authorOptionsLoading={authorOptionsLoading}
           />
         </Grid>
 
@@ -501,40 +518,82 @@ function BlogContentSeoTab({
 
         <Grid item xs={12}>
           <Controller
-            name="content"
+            name="content_font"
             control={control}
-            render={({ field }) => {
-              const localeValue = ensureLocaleValue(field.value);
+            render={({ field: fontField }) => {
+              const fontLocale = ensureLocaleValue(fontField.value);
+              const fontOptions = blogFonts?.options ?? [];
+              const defaultFont = blogFonts?.default || 'cairo';
+
               return (
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}
-                  >
-                    Content (English)
-                  </Typography>
-                  <RichTextEditor
-                    value={localeValue.en ?? ''}
-                    onChange={(html) => field.onChange({ ...localeValue, en: html })}
-                    placeholder="Write article content in English..."
-                  />
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ mt: 3, mb: 1, fontWeight: 600, color: 'text.secondary' }}
-                  >
-                    Content (Arabic)
-                  </Typography>
-                  <RichTextEditor
-                    value={localeValue.ar ?? ''}
-                    onChange={(html) => field.onChange({ ...localeValue, ar: html })}
-                    placeholder="اكتب محتوى المقال بالعربية..."
-                  />
-                  {errors.content && (
-                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, mx: 1.5 }}>
-                      {errors.content.message}
-                    </Box>
-                  )}
-                </Box>
+                <Controller
+                  name="content"
+                  control={control}
+                  render={({ field }) => {
+                    const localeValue = ensureLocaleValue(field.value);
+                    return (
+                      <Box>
+                        {fontsLoading ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <CircularProgress size={18} />
+                            <Typography variant="body2" color="text.secondary">
+                              Loading fonts...
+                            </Typography>
+                          </Box>
+                        ) : null}
+
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}
+                        >
+                          Content (English)
+                        </Typography>
+                        <ContentFontSelect
+                          label="Content font (English)"
+                          value={fontLocale.en || defaultFont}
+                          onChange={(val) =>
+                            fontField.onChange({ ...fontLocale, en: val })
+                          }
+                          options={fontOptions}
+                          disabled={fontsLoading || !fontOptions.length}
+                        />
+                        <RichTextEditor
+                          value={localeValue.en ?? ''}
+                          onChange={(html) => field.onChange({ ...localeValue, en: html })}
+                          placeholder="Write article content in English..."
+                          fontFamily={blogFontValueToCssFamily(fontLocale.en || defaultFont)}
+                        />
+
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ mt: 3, mb: 1, fontWeight: 600, color: 'text.secondary' }}
+                        >
+                          Content (Arabic)
+                        </Typography>
+                        <ContentFontSelect
+                          label="Content font (Arabic)"
+                          value={fontLocale.ar || defaultFont}
+                          onChange={(val) =>
+                            fontField.onChange({ ...fontLocale, ar: val })
+                          }
+                          options={fontOptions}
+                          disabled={fontsLoading || !fontOptions.length}
+                        />
+                        <RichTextEditor
+                          value={localeValue.ar ?? ''}
+                          onChange={(html) => field.onChange({ ...localeValue, ar: html })}
+                          placeholder="اكتب محتوى المقال بالعربية..."
+                          fontFamily={blogFontValueToCssFamily(fontLocale.ar || defaultFont)}
+                        />
+                        {errors.content && (
+                          <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, mx: 1.5 }}>
+                            {errors.content.message}
+                          </Box>
+                        )}
+                      </Box>
+                    );
+                  }}
+                />
               );
             }}
           />
