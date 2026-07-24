@@ -44,10 +44,15 @@ const COLUMNS = [
     id: 'partnership_type',
     header: 'Type',
     sortable: true,
-    renderCell: (value) => (
-      <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        {value || '—'}
-      </span>
+    renderCell: (value, row) => (
+      <div className="flex flex-col gap-1">
+        <span className="w-fit rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+          {value || '—'}
+        </span>
+        {row.card_size && (
+          <span className="text-xs capitalize text-gray-400">{row.card_size}</span>
+        )}
+      </div>
     ),
   },
   {

@@ -1,9 +1,51 @@
-import { Controller } from 'react-hook-form';
-import { TextField, Grid, Box } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Controller, useWatch } from 'react-hook-form';
+import {
+  Grid,
+  Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  FormHelperText,
+} from '@mui/material';
 import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
 import { ImagePickerField } from '../../../../shared-components/image-picker';
+import CustomTierField from '../components/CustomTierField';
+import { FIXED_TIERS, getFixedTier, isFixedTier } from '../models/partnerTiers';
 
-function BasicInfoTab({ control, errors }) {
+function BasicInfoTab({ control, errors, setValue }) {
+  const partnershipType = useWatch({ control, name: 'partnership_type' });
+  const cardSize = useWatch({ control, name: 'card_size' });
+
+  const [category, setCategory] = useState(() => {
+    if (!partnershipType) return '';
+    return isFixedTier(partnershipType) ? partnershipType : 'other';
+  });
+
+  useEffect(() => {
+    if (!partnershipType) {
+      setCategory('');
+    } else if (isFixedTier(partnershipType)) {
+      setCategory(partnershipType);
+    } else {
+      setCategory('other');
+    }
+  }, [partnershipType]);
+
+  const handleCategoryChange = (event) => {
+    const value = event.target.value;
+    setCategory(value);
+    if (value === 'other') {
+      setValue('partnership_type', '', { shouldValidate: true });
+      setValue('card_size', '', { shouldValidate: true });
+    } else {
+      const fixedTier = getFixedTier(value);
+      setValue('partnership_type', fixedTier.label, { shouldValidate: true });
+      setValue('card_size', fixedTier.card_size, { shouldValidate: true });
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
@@ -58,21 +100,35 @@ function BasicInfoTab({ control, errors }) {
         </Grid>
 
         <Grid item xs={12}>
-          <Controller
-            name="partnership_type"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Partnership Type (e.g. Gold, Silver)"
-                fullWidth
-                required
-                error={!!errors.partnership_type}
-                helperText={errors.partnership_type?.message}
-              />
+          <FormControl fullWidth required error={!!errors.partnership_type}>
+            <InputLabel required>Partnership Type</InputLabel>
+            <Select label="Partnership Type" value={category} onChange={handleCategoryChange}>
+              {FIXED_TIERS.map((tier) => (
+                <MenuItem key={tier.value} value={tier.value}>
+                  {tier.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {!!errors.partnership_type && category !== 'other' && (
+              <FormHelperText>{errors.partnership_type.message}</FormHelperText>
             )}
-          />
+          </FormControl>
         </Grid>
+
+        {category === 'other' && (
+          <Grid item xs={12}>
+            <CustomTierField
+              name={partnershipType}
+              cardSize={cardSize}
+              error={!!errors.partnership_type || !!errors.card_size}
+              helperText={errors.partnership_type?.message || errors.card_size?.message}
+              onChange={({ name, card_size }) => {
+                setValue('partnership_type', name, { shouldValidate: true });
+                setValue('card_size', card_size, { shouldValidate: true });
+              }}
+            />
+          </Grid>
+        )}
 
         <Grid item xs={12}>
           <Controller

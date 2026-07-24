@@ -5,6 +5,7 @@ const PartnerModel = () => ({
   slug: defaultLocaleValue(),
   image: '', 
   partnership_type: '',
+  card_size: '',
   short_description: defaultLocaleValue(),
   long_description: defaultLocaleValue(),
   social_links: [''], 

@@ -33,6 +33,7 @@ const partnerSchema = z.object({
   slug: localeObjectSchema.optional(),
   image: z.string().optional(), 
   partnership_type: z.string().min(1, 'Partnership type is required'),
+  card_size: z.string().min(1, 'Card size is required'),
   short_description: localeObjectSchema.optional(),
   long_description: localeObjectSchema.optional(),
   social_links: z.array(z.string().optional()).optional(),
@@ -63,6 +64,7 @@ function Partner() {
     handleSubmit,
     reset,
     register,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(partnerSchema),
@@ -76,6 +78,7 @@ function Partner() {
         slug: ensureLocaleValue(partner.slug),
         image: partner.image || '', 
         partnership_type: partner.partnership_type || '',
+        card_size: partner.card_size || '',
         short_description: ensureLocaleValue(partner.short_description),
         long_description: ensureLocaleValue(partner.long_description),
         social_links: Array.isArray(partner.social_links) ? partner.social_links : [''],
@@ -104,6 +107,7 @@ const onSubmit = async (formData) => {
       name: formData.name,
       slug: formData.slug,
       partnership_type: formData.partnership_type,
+      card_size: formData.card_size,
       short_description: formData.short_description,
       long_description: formData.long_description,
       social_links: cleanedSocialLinks,
@@ -201,7 +205,9 @@ const onSubmit = async (formData) => {
           <Tab label="Services (Optional)" />
         </Tabs>
         <Box>
-          {currentTab === 0 && <BasicInfoTab control={control} errors={errors} />}
+          {currentTab === 0 && (
+            <BasicInfoTab control={control} errors={errors} setValue={setValue} />
+          )}
           {currentTab === 1 && <SocialLinksTab control={control} errors={errors} />}
           {currentTab === 2 && (
             <ServicesTab control={control} register={register} errors={errors} />
