@@ -8,6 +8,7 @@ const BlogModel = (data) =>
     slug: defaultLocaleValue(),
     description: defaultLocaleValue(),
     content: defaultLocaleValue(),
+    content_font: defaultLocaleValue(),
     status: 'draft',
     publishedAt: null,
     blog_category: null,
@@ -23,8 +24,12 @@ const BlogModel = (data) =>
     canonical_url: '',
     og_title: defaultLocaleValue(),
     og_description: defaultLocaleValue(),
-    author_user: null,
-    // Frontend-only fields (ask backend to add):
+    author_type: '',
+    author_admin: null,
+    author_name: defaultLocaleValue(),
+    author_description: defaultLocaleValue(),
+    author_image: { id: '', url: '' },
+    author_image_url: '',
     related_blogs: [],
     /** { reference_id?: string, name, desc, url } — reference_id set when loaded from API */
     blog_references: [],

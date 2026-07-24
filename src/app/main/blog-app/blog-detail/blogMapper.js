@@ -2,8 +2,9 @@ import BlogModel from './models/BlogModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 import {
   normalizeMediaFormValue,
-  isLikelyMongoObjectId,
 } from '../../../shared-components/image-picker';
+import { ensureContentFont } from './blogFontUtils';
+import { mapAuthorFromApi } from './blogAuthorUtils';
 
 function hasLocaleText(value) {
   const v = ensureLocaleValue(value);
@@ -179,13 +180,7 @@ function relatedBlogsFromApi(ids) {
 export function mapBlogFromApi(raw) {
   const source = raw?.data ?? raw ?? {};
   const seo = source.seo && typeof source.seo === 'object' ? source.seo : null;
-  const userIdStr = normalizeIdRef(source.user_id ?? source.author_user_id);
-  const authorLabel =
-    source.user_name ||
-    source.author_user_name ||
-    source.author_user?.label ||
-    source.author_user?.name ||
-    '';
+  const authorFields = mapAuthorFromApi(source);
   return BlogModel({
     ...source,
     id: source._id != null ? String(source._id) : source.id,
@@ -194,13 +189,7 @@ export function mapBlogFromApi(raw) {
     slug: ensureLocaleValue(source.slug),
     blog_image: normalizeMediaFormValue(source.blog_image),
     tags: tagsFromApiToFlat(source.tags),
-    author_user:
-      userIdStr && isLikelyMongoObjectId(userIdStr)
-        ? {
-            id: userIdStr,
-            label: authorLabel || userIdStr,
-          }
-        : null,
+    ...authorFields,
     blog_category: mapBlogCategoryFromApi(source),
     related_blogs: relatedBlogsFromApi(
       Array.isArray(source.related_blogs_ids)
@@ -214,6 +203,7 @@ export function mapBlogFromApi(raw) {
     blog_references: blogReferencesFromApi(source),
     description: ensureLocaleValue(source.description),
     content: ensureLocaleValue(source.content),
+    content_font: ensureContentFont(source.content_font ?? source.font ?? source.contentFont),
     meta_title: pickLocaleField(source.meta_title, seo?.meta_title),
     meta_description: pickLocaleField(source.meta_description, seo?.meta_description),
     meta_keywords: pickMetaKeywords(source.meta_keywords, seo?.meta_keywords),

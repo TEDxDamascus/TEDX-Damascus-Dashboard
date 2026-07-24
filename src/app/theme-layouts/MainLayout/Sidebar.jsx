@@ -35,7 +35,7 @@ const menuItems = [
   // { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
   { text: 'Speakers', icon: <RecordVoiceOver />, path: '/speakers' },
   { text: 'Partners', icon: <Handshake />, path: '/partners' },
-  // { text: 'Users', icon: <People />, path: '/users' },
+   { text: 'Users', icon: <People />, path: '/users' },
   { text: 'Team', icon: <GroupsIcon />, path: '/team' },
   { text: 'Organizers', icon: <ManageAccountsIcon />, path: '/organizers' },
   { text: 'Forms', icon: <Assignment />, path: '/forms' },

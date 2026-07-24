@@ -59,7 +59,7 @@ function getActiveHeadingLevel(editor) {
   return '0';
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }) {
+export default function RichTextEditor({ value, onChange, placeholder, fontFamily }) {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [youtubeDialogOpen, setYoutubeDialogOpen] = useState(false);
@@ -127,6 +127,15 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
       editor.commands.setContent(next, false);
     }
   }, [editor, value]);
+
+  useEffect(() => {
+    if (!editor) return;
+    if (fontFamily) {
+      editor.view.dom.style.fontFamily = fontFamily;
+    } else {
+      editor.view.dom.style.fontFamily = '';
+    }
+  }, [editor, fontFamily]);
 
   if (!editor) return null;
 
@@ -413,6 +422,7 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
       <EditorContent
         editor={editor}
         className="rich-text-editor-content min-h-[360px] w-full outline-none"
+        style={fontFamily ? { fontFamily } : undefined}
       />
 
       <ImagePickerDialog
