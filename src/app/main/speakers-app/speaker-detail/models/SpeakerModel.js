@@ -3,6 +3,8 @@ import { defaultLocaleValue } from '../../../../shared-components/locale-input';
 const SpeakerModel = () => ({
   name: defaultLocaleValue(),
   bio: defaultLocaleValue(),
+  experience: defaultLocaleValue(),
+  brief: defaultLocaleValue(),
   description: defaultLocaleValue(),
   speaker_image: '',
   linkedin_url: '',
@@ -10,7 +12,7 @@ const SpeakerModel = () => ({
   facebook_url: '',
   website_url: '',
   gallery: [],
-  video_link: '',
+  video_link: [],
   email: '',
   phone: '',
   featured: false,

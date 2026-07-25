@@ -23,6 +23,8 @@ const speakerSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   bio: localeObjectSchema.optional(),
+  experience: localeObjectSchema.optional(),
+  brief: localeObjectSchema.optional(),
   description: localeObjectSchema.optional(),
   speaker_image: z.string().optional(),
   linkedin_url: z.string().optional(),
@@ -30,7 +32,7 @@ const speakerSchema = z.object({
   facebook_url: z.string().optional(),
   website_url: z.string().optional(),
   gallery: z.array(z.string()).optional(),
-  video_link: z.string().optional(),
+  video_link: z.array(z.string()).optional(),
   phone: z.string().optional(),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
@@ -76,6 +78,8 @@ function Speaker() {
       reset({
         name: ensureLocaleValue(speaker.name),
         bio: ensureLocaleValue(speaker.bio),
+        experience: ensureLocaleValue(speaker.experience),
+        brief: ensureLocaleValue(speaker.brief),
         description: ensureLocaleValue(speaker.description),
         speaker_image: speaker.speaker_image || '',
         linkedin_url,
@@ -83,7 +87,11 @@ function Speaker() {
         facebook_url,
         website_url,
         gallery: Array.isArray(speaker.gallery) ? speaker.gallery : [],
-        video_link: speaker.video_link || '',
+        video_link: Array.isArray(speaker.video_link)
+          ? speaker.video_link
+          : speaker.video_link
+            ? [speaker.video_link]
+            : [],
         email: speaker.email || '',
         phone: speaker.phone || '',
         featured: speaker.featured ?? false,
@@ -104,6 +112,8 @@ function Speaker() {
       const payload = {
         name: formData.name,
         bio: formData.bio,
+        experience: formData.experience,
+        brief: formData.brief,
         description: formData.description,
         featured: formData.featured,
         active: formData.active,
@@ -112,7 +122,8 @@ function Speaker() {
       if (formData.email?.trim()) payload.email = formData.email.trim();
       if (formData.phone?.trim()) payload.phone = formData.phone.trim();
       if (formData.speaker_image) payload.speaker_image = formData.speaker_image;
-      if (formData.video_link?.trim()) payload.video_link = formData.video_link.trim();
+      const validVideoLinks = (formData.video_link ?? []).filter((v) => v?.trim());
+      if (validVideoLinks.length) payload.video_link = validVideoLinks;
       if (formData.gallery?.length) payload.gallery = formData.gallery;
       if (socialLinks.length) payload.social_links = socialLinks;
 
