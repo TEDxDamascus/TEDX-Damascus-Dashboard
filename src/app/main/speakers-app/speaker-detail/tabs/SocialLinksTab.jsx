@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import { Controller, useController } from 'react-hook-form';
-import { TextField, Grid, Box, Typography, IconButton, Button } from '@mui/material';
-import { Add, DeleteOutline } from '@mui/icons-material';
+import {
+  TextField,
+  Grid,
+  Box,
+  Typography,
+  IconButton,
+  Button,
+  Paper,
+} from '@mui/material';
+import { Add, DeleteOutline, YouTube } from '@mui/icons-material';
 import { ImagePickerDialog } from '../../../../shared-components/image-picker';
 
+/* ─────────────────────────────────────────────
+   Gallery Picker
+───────────────────────────────────────────── */
 function GalleryPicker({ control, name }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { field } = useController({ control, name });
@@ -89,6 +100,109 @@ function GalleryPicker({ control, name }) {
   );
 }
 
+/* ─────────────────────────────────────────────
+   Video Links Picker (multiple URLs)
+───────────────────────────────────────────── */
+function VideoLinksPicker({ control, name }) {
+  const { field } = useController({ control, name });
+  const links = Array.isArray(field.value) ? field.value : [];
+
+  const handleAdd = () => {
+    field.onChange([...links, '']);
+  };
+
+  const handleChange = (index, value) => {
+    const updated = links.map((v, i) => (i === index ? value : v));
+    field.onChange(updated);
+  };
+
+  const handleRemove = (index) => {
+    field.onChange(links.filter((_, i) => i !== index));
+  };
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <YouTube sx={{ color: '#FF0000', fontSize: 22 }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+            Video Links
+          </Typography>
+        </Box>
+        <Button
+          size="small"
+          startIcon={<Add />}
+          onClick={handleAdd}
+          sx={{
+            color: 'var(--color-primary)',
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': { bgcolor: 'rgba(235,0,40,0.06)' },
+          }}
+        >
+          Add Video Link
+        </Button>
+      </Box>
+
+      {links.length === 0 && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2.5,
+            textAlign: 'center',
+            borderStyle: 'dashed',
+            borderColor: '#bdbdbd',
+            borderRadius: 2,
+            color: 'text.secondary',
+            fontSize: 13,
+          }}
+        >
+          No video links added yet. Click "Add Video Link" to add one.
+        </Paper>
+      )}
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        {links.map((link, index) => (
+          <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <TextField
+              value={link}
+              onChange={(e) => handleChange(index, e.target.value)}
+              label={`Video Link ${index + 1}`}
+              placeholder="https://www.youtube.com/watch?v=..."
+              fullWidth
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <YouTube sx={{ color: '#FF0000', fontSize: 18, mr: 0.5 }} />
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: 'var(--color-primary)' },
+                  '&.Mui-focused fieldset': { borderColor: 'var(--color-primary)' },
+                },
+              }}
+            />
+            <IconButton
+              size="small"
+              onClick={() => handleRemove(index)}
+              sx={{
+                color: '#bdbdbd',
+                '&:hover': { color: 'var(--color-primary)', bgcolor: 'rgba(235,0,40,0.06)' },
+              }}
+            >
+              <DeleteOutline fontSize="small" />
+            </IconButton>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Media & Links Tab
+───────────────────────────────────────────── */
 function MediaLinksTab({ control, errors }) {
   return (
     <Box sx={{ p: 3 }}>
@@ -161,23 +275,12 @@ function MediaLinksTab({ control, errors }) {
           />
         </Grid>
 
+        {/* Video Links – multiple */}
         <Grid item xs={12}>
-          <Controller
-            name="video_link"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Video Link"
-                fullWidth
-                placeholder="https://youtube.com/watch?v=..."
-                error={!!errors.video_link}
-                helperText={errors.video_link?.message}
-              />
-            )}
-          />
+          <VideoLinksPicker control={control} name="video_link" />
         </Grid>
 
+        {/* Gallery */}
         <Grid item xs={12}>
           <GalleryPicker control={control} name="gallery" />
         </Grid>

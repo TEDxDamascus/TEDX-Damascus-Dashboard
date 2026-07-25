@@ -93,6 +93,40 @@ function BasicInfoTab({ control, errors }) {
 
         <Grid item xs={12}>
           <Controller
+            name="experience"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textFieldMultiple}
+                label="Experience"
+                minRows={3}
+                error={!!errors.experience}
+                helperText={errors.experience?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
+            name="brief"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textFieldMultiple}
+                label="Brief"
+                minRows={3}
+                error={!!errors.brief}
+                helperText={errors.brief?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
             name="description"
             control={control}
             render={({ field }) => (
