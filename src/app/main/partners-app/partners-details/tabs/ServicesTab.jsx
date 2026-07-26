@@ -29,9 +29,15 @@ function ServicesTab({ control, register, errors }) {
         </Button>
       </Box>
 
+      {errors.services?.message && (
+        <Typography variant="body2" className="mb-3 text-red-500">
+          {errors.services.message}
+        </Typography>
+      )}
+
       {fields.length === 0 ? (
-        <Box className="p-8 text-center border-2 border-dashed border-gray-200 rounded-lg text-gray-400">
-          No services added yet. Click "Add Service" to add partner services.
+        <Box className="p-8 text-center border-2 border-dashed border-red-200 rounded-lg text-gray-400">
+          At least one service is required. Click "Add Service" to add one.
         </Box>
       ) : (
         <Grid container spacing={3}>
@@ -66,7 +72,10 @@ function ServicesTab({ control, register, errors }) {
                           label="Service Description"
                           minRows={2}
                           error={!!errors.services?.[index]?.description}
-                          helperText={errors.services?.[index]?.description?.message}
+                          helperText={
+                            errors.services?.[index]?.description?.en?.message ||
+                            errors.services?.[index]?.description?.ar?.message
+                          }
                         />
                       )}
                     />
