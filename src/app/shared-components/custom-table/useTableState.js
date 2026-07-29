@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import {
   selectTableParams,
   setTablePage,
@@ -11,7 +11,7 @@ import {
 
 export function useTableState(tableId) {
   const dispatch = useDispatch();
-  const params = useSelector(selectTableParams(tableId));
+  const params = useSelector(selectTableParams(tableId), shallowEqual);
 
   const setPage = useCallback(
     (page) => dispatch(setTablePage({ tableId, page })),

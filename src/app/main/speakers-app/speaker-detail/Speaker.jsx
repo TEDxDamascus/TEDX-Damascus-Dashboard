@@ -21,6 +21,7 @@ const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
 
 const speakerSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
+  slug: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Slug is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   bio: localeObjectSchema.optional(),
   experience: localeObjectSchema.optional(),
@@ -34,6 +35,7 @@ const speakerSchema = z.object({
   gallery: z.array(z.string()).optional(),
   video_link: z.array(z.string()).optional(),
   phone: z.string().optional(),
+  address: localeObjectSchema.optional(),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
 });
@@ -77,6 +79,7 @@ function Speaker() {
 
       reset({
         name: ensureLocaleValue(speaker.name),
+        slug: ensureLocaleValue(speaker.slug),
         bio: ensureLocaleValue(speaker.bio),
         experience: ensureLocaleValue(speaker.experience),
         brief: ensureLocaleValue(speaker.brief),
@@ -92,8 +95,9 @@ function Speaker() {
           : speaker.video_link
             ? [speaker.video_link]
             : [],
-        email: speaker.email || '',
-        phone: speaker.phone || '',
+        email: speaker.contact_info?.email || speaker.email || '',
+        phone: speaker.contact_info?.phone || speaker.phone || '',
+        address: ensureLocaleValue(speaker.contact_info?.address),
         featured: speaker.featured ?? false,
         active: speaker.active ?? true,
       });
@@ -111,6 +115,7 @@ function Speaker() {
 
       const payload = {
         name: formData.name,
+        slug: formData.slug,
         bio: formData.bio,
         experience: formData.experience,
         brief: formData.brief,
@@ -119,8 +124,11 @@ function Speaker() {
         active: formData.active,
       };
 
-      if (formData.email?.trim()) payload.email = formData.email.trim();
-      if (formData.phone?.trim()) payload.phone = formData.phone.trim();
+      payload.contact_info = {
+        email: formData.email?.trim() || '',
+        phone: formData.phone?.trim() || '',
+        address: formData.address ?? { en: '', ar: '' },
+      };
       if (formData.speaker_image) payload.speaker_image = formData.speaker_image;
       const validVideoLinks = (formData.video_link ?? []).filter((v) => v?.trim());
       if (validVideoLinks.length) payload.video_link = validVideoLinks;

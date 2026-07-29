@@ -13,21 +13,38 @@ const COLUMNS = [
   {
     id: 'image',
     header: '',
-    renderCell: (value, row) => (
-      <div className="flex items-center">
-        {value ? (
-          <img src={value} className="h-10 w-10 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white">
-            {row.title?.charAt(0) || '?'}
-          </div>
-        )}
-      </div>
+    renderCell: (value, row) => {
+      const titleText = typeof row.title === 'string' ? row.title : row.title?.en || row.title?.ar || '';
+      return (
+        <div className="flex items-center">
+          {value ? (
+            <img src={value} className="h-10 w-10 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white">
+              {titleText.charAt(0).toUpperCase() || '?'}
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'title',
+    header: 'Event Title',
+    renderCell: (value) => (
+      <span className="font-medium text-tedx-dark">
+        {typeof value === 'string' ? value : value?.en || value?.ar || '—'}
+      </span>
     ),
   },
-  { id: 'title', header: 'Event Title' },
   { id: 'date', header: 'Date' },
-  { id: 'location', header: 'Location' },
+  {
+    id: 'location',
+    header: 'Location',
+    renderCell: (value) => (
+      <span>{typeof value === 'string' ? value : value?.en || value?.ar || '—'}</span>
+    ),
+  },
   {
     id: 'status',
     header: 'Status',

@@ -2,6 +2,7 @@ import { defaultLocaleValue } from '../../../../shared-components/locale-input';
 
 const SpeakerModel = () => ({
   name: defaultLocaleValue(),
+  slug: defaultLocaleValue(),
   bio: defaultLocaleValue(),
   experience: defaultLocaleValue(),
   brief: defaultLocaleValue(),
@@ -15,6 +16,7 @@ const SpeakerModel = () => ({
   video_link: [],
   email: '',
   phone: '',
+  address: defaultLocaleValue(),
   featured: false,
   active: true,
 });

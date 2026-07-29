@@ -26,6 +26,23 @@ function BasicInfoTab({ control, errors }) {
 
         <Grid item xs={12}>
           <Controller
+            name="slug"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textField}
+                label="Slug"
+                required
+                error={!!errors.slug}
+                helperText={errors.slug?.message || 'Unique identifier used in URLs (e.g. john-doe)'}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
             name="speaker_image"
             control={control}
             render={({ field }) => (
@@ -69,6 +86,22 @@ function BasicInfoTab({ control, errors }) {
                 fullWidth
                 error={!!errors.phone}
                 helperText={errors.phone?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
+            name="address"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textField}
+                label="Address"
+                error={!!errors.address}
+                helperText={errors.address?.message}
               />
             )}
           />

@@ -23,8 +23,8 @@ import OrganizerModel from './models/organizerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 
 const localeObjectSchema = z.object({
-  ar: z.string(),
-  en: z.string(),
+  ar: z.string().optional(),
+  en: z.string().optional(),
 });
 
 const organizerSchema = z.object({
@@ -103,7 +103,7 @@ function Organizer() {
     const payload = {
       name: data.name,
       bio: data.bio,
-      role: data.role,
+      role: data.role || undefined,
       ...(data.image ? { image: data.image } : {}),
       ...(social_links.length ? { social_links } : {}),
       ...(data.gallery?.length ? { gallery: data.gallery } : {}),
@@ -113,14 +113,19 @@ function Organizer() {
       if (isNew) {
         await createOrganizer(payload).unwrap();
         enqueueSnackbar('Organizer created successfully', { variant: 'success' });
+        navigate('/organizers');
       } else {
         await updateOrganizer({ id: organizerId, data: payload }).unwrap();
         enqueueSnackbar('Organizer updated successfully', { variant: 'success' });
       }
-      navigate('/organizers');
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} organizer`, { variant: 'error' });
+    } catch (err) {
+      const message = err?.data?.message || err?.message || `Failed to ${isNew ? 'create' : 'update'} organizer`;
+      enqueueSnackbar(message, { variant: 'error' });
     }
+  };
+
+  const onValidationError = () => {
+    enqueueSnackbar('Please fill in all required fields', { variant: 'warning' });
   };
 
   if (isLoading) {
@@ -157,7 +162,7 @@ function Organizer() {
           <Button
             variant="contained"
             startIcon={isSaving ? <CircularProgress size={14} color="inherit" /> : <Save />}
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, onValidationError)}
             disabled={isSaving}
             sx={{
               bgcolor: 'var(--color-primary)',
