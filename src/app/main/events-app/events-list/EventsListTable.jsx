@@ -9,6 +9,12 @@ import StatusBadge from '../../../shared-components/status-badge';
 
 const TABLE_ID = 'events';
 
+function getLocalizedText(value) {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') return value.en || value.ar || '';
+  return '';
+}
+
 const COLUMNS = [
   {
     id: 'image',
@@ -19,15 +25,23 @@ const COLUMNS = [
           <img src={value} className="h-10 w-10 rounded-full object-cover" />
         ) : (
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white">
-            {row.title?.charAt(0) || '?'}
+            {getLocalizedText(row.title).charAt(0) || '?'}
           </div>
         )}
       </div>
     ),
   },
-  { id: 'title', header: 'Event Title' },
+  {
+    id: 'title',
+    header: 'Event Title',
+    renderCell: (value) => getLocalizedText(value) || '—',
+  },
   { id: 'date', header: 'Date' },
-  { id: 'location', header: 'Location' },
+  {
+    id: 'location',
+    header: 'Location',
+    renderCell: (value) => getLocalizedText(value) || '—',
+  },
   {
     id: 'status',
     header: 'Status',

@@ -9,14 +9,19 @@ import Breadcrumb from '../../../shared-components/breadcrumb';
 import { useSnackbar } from 'notistack';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../auth/store/userSlice';
-import { useGetUserQuery, useCreateUserMutation, useUpdateUserMutation } from '../UsersApi';
+import {
+  useGetUserQuery,
+  useGetUserPermissionsQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useUpdateUserPermissionsMutation,
+} from '../UsersApi';
 import BasicInfoTab from './tabs/BasicInfoTab';
-import UserModel from './models/UserModel';
+import UserModel, { buildDefaultPermissions } from './models/UserModel';
 
 const baseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
-  role: z.string().min(1, 'Role is required'),
   status: z.string().min(1, 'Status is required'),
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
@@ -63,8 +68,14 @@ function User() {
 
   const currentUser = useSelector(selectUser);
   const { data: user, isLoading } = useGetUserQuery(userId, { skip: isNew });
+  const { data: permissions, isFetching: isLoadingPermissions } = useGetUserPermissionsQuery(
+    userId,
+    { skip: isNew },
+  );
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const [updateUserPermissions, { isLoading: isSavingPermissions }] =
+    useUpdateUserPermissionsMutation();
 
   const isUserDisabled = user?.status === 'disabled';
   const isOwnSuperadmin =
@@ -74,6 +85,8 @@ function User() {
     control,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(isNew ? newUserSchema : userSchema),
@@ -82,17 +95,29 @@ function User() {
 
   useEffect(() => {
     if (user) {
-      reset(user);
+      reset({ ...user, permissions: getValues('permissions') });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, reset]);
 
+  useEffect(() => {
+    if (permissions) {
+      setValue('permissions', { ...buildDefaultPermissions(false), ...permissions });
+    }
+  }, [permissions, setValue]);
+
   const onSubmit = async (data) => {
+    const { permissions: permissionsData, ...basicInfo } = data;
+    basicInfo.role = 'admin';
     try {
       if (isNew) {
-        await createUser(data).unwrap();
+        await createUser(basicInfo).unwrap();
         enqueueSnackbar('User created successfully', { variant: 'success' });
       } else {
-        await updateUser({ id: userId, data }).unwrap();
+        await Promise.all([
+          updateUser({ id: userId, data: basicInfo }).unwrap(),
+          updateUserPermissions({ id: userId, permissions: permissionsData }).unwrap(),
+        ]);
         enqueueSnackbar('User updated successfully', { variant: 'success' });
       }
       navigate('/users');
@@ -101,7 +126,7 @@ function User() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || (!isNew && isLoadingPermissions)) {
     return (
       <div className="flex h-64 items-center justify-center">
         <CircularProgress />
@@ -135,16 +160,20 @@ function User() {
           <Button
             variant="contained"
             startIcon={
-              isCreating || isUpdating ? <CircularProgress size={14} color="inherit" /> : <Save />
+              isCreating || isUpdating || isSavingPermissions ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <Save />
+              )
             }
             onClick={handleSubmit(onSubmit)}
-            disabled={isCreating || isUpdating || !isDirty}
+            disabled={isCreating || isUpdating || isSavingPermissions || !isDirty}
             sx={{
               backgroundColor: 'var(--color-primary)',
               '&:hover': { backgroundColor: 'var(--color-primary-dark)' },
             }}
           >
-            {isCreating || isUpdating ? 'Saving...' : 'Save User'}
+            {isCreating || isUpdating || isSavingPermissions ? 'Saving...' : 'Save User'}
           </Button>
         </div>
       </div>
