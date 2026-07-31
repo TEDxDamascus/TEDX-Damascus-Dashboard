@@ -1,90 +1,114 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Box,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TextField,
-  Button,
-  Typography,
-  Divider,
-} from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Box, TextField, Button, Typography, Alert } from '@mui/material';
 import { addCustomTier, selectCustomTiers } from '../../customTiersSlice';
 import TierSizePicker from './TierSizePicker';
+import { CARD_SIZES } from '../models/partnerTiers';
 
-const CREATE_NEW_VALUE = '__create_new__';
+const DEFAULT_SIZE = CARD_SIZES[0]?.value || 'small';
 
-function CustomTierField({ name, cardSize, onChange, error, helperText }) {
+function CustomTierField({
+  name,
+  cardSize,
+  onChange,
+  error,
+  helperText,
+}) {
   const dispatch = useDispatch();
   const customTiers = useSelector(selectCustomTiers);
 
-  const matchingTier = useMemo(
-    () => customTiers.find((tier) => tier.name === name && tier.card_size === cardSize),
-    [customTiers, name, cardSize],
-  );
+  const [draftName, setDraftName] = useState(name || '');
+  const [draftSize, setDraftSize] = useState(cardSize || DEFAULT_SIZE);
 
-  const [mode, setMode] = useState(matchingTier ? matchingTier.id : customTiers.length ? '' : CREATE_NEW_VALUE);
-  const [draftName, setDraftName] = useState(matchingTier ? '' : name || '');
-  const [draftSize, setDraftSize] = useState(matchingTier ? 'small' : cardSize || 'small');
+  const existingTier = useMemo(() => {
+    const value = draftName.trim().toLowerCase();
 
-  const handleSelectExisting = (event) => {
-    const selected = event.target.value;
-    setMode(selected);
-    if (selected === CREATE_NEW_VALUE) {
-      setDraftName('');
-      setDraftSize('small');
-      return;
-    }
-    const tier = customTiers.find((t) => t.id === selected);
-    if (tier) {
-      onChange({ name: tier.name, card_size: tier.card_size });
+    if (!value) return null;
+
+    return customTiers.find(
+      (tier) => tier.name.trim().toLowerCase() === value,
+    );
+  }, [customTiers, draftName]);
+
+  useEffect(() => {
+    if (!existingTier) return;
+
+    onChange({
+      name: existingTier.name,
+      custom_card_size: existingTier.card_size,
+    });
+  }, [existingTier]);
+
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+
+    setDraftName(value);
+
+    if (
+      !customTiers.some(
+        (tier) =>
+          tier.name.trim().toLowerCase() === value.trim().toLowerCase(),
+      )
+    ) {
+      onChange({
+        name: value,
+        custom_card_size: draftSize,
+      });
     }
   };
 
   const handleSaveTier = () => {
     const trimmedName = draftName.trim();
-    if (!trimmedName) return;
-    dispatch(addCustomTier({ name: trimmedName, card_size: draftSize }));
-    onChange({ name: trimmedName, card_size: draftSize });
+
+    if (!trimmedName || existingTier) return;
+
+    dispatch(
+      addCustomTier({
+        name: trimmedName,
+        card_size: draftSize,
+      }),
+    );
+
+    onChange({
+      name: trimmedName,
+      custom_card_size: draftSize,
+    });
   };
 
   return (
-    <Box className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-      {customTiers.length > 0 && (
-        <FormControl fullWidth size="small" className="mb-3">
-          <InputLabel>Custom Partner Type</InputLabel>
-          <Select label="Custom Partner Type" value={mode} onChange={handleSelectExisting}>
-            {customTiers.map((tier) => (
-              <MenuItem key={tier.id} value={tier.id}>
-                {tier.name} · {tier.card_size}
-              </MenuItem>
-            ))}
-            <Divider />
-            <MenuItem value={CREATE_NEW_VALUE}>
-              <Add fontSize="small" className="mr-1" /> Create new type
-            </MenuItem>
-          </Select>
-        </FormControl>
-      )}
+    <Box className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <TextField
+        label="Partner Type"
+        value={draftName}
+        onChange={handleNameChange}
+        fullWidth
+        size="small"
+        error={!!error}
+        helperText={helperText}
+      />
 
-      {(mode === CREATE_NEW_VALUE || customTiers.length === 0) && (
-        <Box className="flex flex-col gap-3">
-          <TextField
-            label="Custom Type Name (e.g. Media Sponsor)"
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
-            fullWidth
-            size="small"
-            error={!!error}
-            helperText={helperText}
-          />
+      {existingTier ? (
+        <>
+          <Alert severity="info">
+            This partner tier already exists.
+          </Alert>
+
+          <Typography variant="body2">
+            Selected Card Size:{' '}
+            <strong>{existingTier.card_size}</strong>
+          </Typography>
+        </>
+      ) : (
+        <>
           <Typography variant="body2" className="font-medium text-gray-600">
             Card Size
           </Typography>
-          <TierSizePicker value={draftSize} onChange={setDraftSize} />
+
+          <TierSizePicker
+            value={draftSize}
+            onChange={setDraftSize}
+          />
+
           <Button
             variant="contained"
             onClick={handleSaveTier}
@@ -92,18 +116,14 @@ function CustomTierField({ name, cardSize, onChange, error, helperText }) {
             sx={{
               alignSelf: 'flex-start',
               bgcolor: 'var(--color-primary)',
-              '&:hover': { bgcolor: 'var(--color-primary-dark)' },
+              '&:hover': {
+                bgcolor: 'var(--color-primary-dark)',
+              },
             }}
           >
             Save Type
           </Button>
-        </Box>
-      )}
-
-      {name && cardSize && mode !== CREATE_NEW_VALUE && customTiers.length > 0 && (
-        <Typography variant="caption" className="text-gray-500">
-          Selected: {name} ({cardSize})
-        </Typography>
+        </>
       )}
     </Box>
   );

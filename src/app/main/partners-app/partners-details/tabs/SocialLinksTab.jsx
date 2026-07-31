@@ -11,7 +11,7 @@ function SocialLinksTab({ control, errors }) {
             Social Links
           </Typography>
         </Grid>
-        
+
         <Grid item xs={12}>
           <Controller
             name="social_links.0"
@@ -20,10 +20,13 @@ function SocialLinksTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Website URL"
+                required
                 fullWidth
                 placeholder="https://example.com"
-                error={!!errors.social_links?.[0]}
-                helperText={errors.social_links?.[0]?.message}
+                error={!!errors.social_links?.[0] || !!errors.social_links?.message}
+                helperText={
+                  errors.social_links?.[0]?.message || errors.social_links?.message
+                }
               />
             )}
           />
@@ -43,6 +46,7 @@ function SocialLinksTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Email Address"
+                required
                 fullWidth
                 placeholder="info@example.com"
                 error={!!errors.contact_info?.email}
@@ -60,6 +64,7 @@ function SocialLinksTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Phone Number"
+                required
                 fullWidth
                 placeholder="+963115554433"
                 error={!!errors.contact_info?.phone}
@@ -78,8 +83,12 @@ function SocialLinksTab({ control, errors }) {
                 {...field}
                 type={localeInputTypes.textField}
                 label="Address"
+                required
                 error={!!errors.contact_info?.address}
-                helperText={errors.contact_info?.address?.message}
+                helperText={
+                  errors.contact_info?.address?.en?.message ||
+                  errors.contact_info?.address?.ar?.message
+                }
               />
             )}
           />

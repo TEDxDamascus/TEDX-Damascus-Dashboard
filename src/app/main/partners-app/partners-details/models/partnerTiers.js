@@ -1,16 +1,38 @@
 export const FIXED_TIERS = [
-  { value: 'platinum', label: 'Platinum', card_size: 'large' },
-  { value: 'gold', label: 'Gold', card_size: 'medium' },
-  { value: 'silver', label: 'Silver', card_size: 'small' },
-  { value: 'other', label: 'Other' },
+  {
+    value: "diamond",
+    label: "Diamond",
+    size: null, // ✅ Diamond ما إلها size — القياس محدد بتصميم الموقع نفسه (full layout)
+  },
+  {
+    value: "gold",
+    label: "Gold",
+    size: null,
+  },
+  {
+    value: "silver",
+    label: "Silver",
+    size: null,
+  },
 ];
 
 export const CARD_SIZES = [
-  { value: 'large', label: 'Large', description: 'Big feature card with image, description and buttons' },
-  { value: 'medium', label: 'Medium', description: '2-up card with a short description' },
-  { value: 'small', label: 'Small', description: 'Compact badge with just the name' },
+  {
+    value: "large",
+    label: "Large",
+  },
+  {
+    value: "medium",
+    label: "Medium",
+  },
+  {
+    value: "small",
+    label: "Small",
+  },
 ];
 
-export const getFixedTier = (value) => FIXED_TIERS.find((tier) => tier.value === value);
+export const getFixedTier = (value) =>
+  FIXED_TIERS.find((tier) => tier.value === value);
 
-export const isFixedTier = (value) => FIXED_TIERS.some((tier) => tier.value === value && value !== 'other');
+export const isFixedTier = (value) =>
+  FIXED_TIERS.some((tier) => tier.value === value);

@@ -55,9 +55,6 @@ function TierSizePicker({ value, onChange }) {
             >
               {option.label}
             </Typography>
-            <Typography variant="caption" className="block text-center text-gray-400">
-              {option.description}
-            </Typography>
           </Box>
         );
       })}
