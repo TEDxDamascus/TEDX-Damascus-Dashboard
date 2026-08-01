@@ -12,6 +12,7 @@ import {
   useCreateTeamMemberMutation,
   useUpdateTeamMemberMutation,
 } from '../teamApi';
+import { useGetEventsQuery } from '../../events-app/EventsApi';
 import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
 import TeamMemberModel from './models/TeamMemberModel';
@@ -28,6 +29,7 @@ const teamMemberSchema = z.object({
   twitter_url: z.string().optional(),
   facebook_url: z.string().optional(),
   website_url: z.string().optional(),
+  event_id: z.string().optional(),
 });
 
 function TeamMember() {
@@ -41,6 +43,8 @@ function TeamMember() {
   const [createMember, { isLoading: isCreating }] = useCreateTeamMemberMutation();
   const [updateMember, { isLoading: isUpdating }] = useUpdateTeamMemberMutation();
   const isSaving = isCreating || isUpdating;
+  const { data: eventsData, isLoading: isLoadingEvents } = useGetEventsQuery({ pageSize: 100 });
+  const events = eventsData?.items ?? [];
 
   const {
     control,
@@ -76,6 +80,7 @@ function TeamMember() {
         twitter_url,
         facebook_url,
         website_url,
+        event_id: member.event_id || '',
       });
     }
   }, [member, isNew, reset]);
@@ -96,6 +101,7 @@ function TeamMember() {
       };
       if (formData.image) payload.image = formData.image;
       if (socialLink.length) payload.social_link = socialLink;
+      if (formData.event_id) payload.event_id = formData.event_id;
 
       if (isNew) {
         await createMember(payload).unwrap();
@@ -168,7 +174,14 @@ function TeamMember() {
           <Tab label="Social Links" />
         </Tabs>
         <Box>
-          {currentTab === 0 && <BasicInfoTab control={control} errors={errors} />}
+          {currentTab === 0 && (
+            <BasicInfoTab
+              control={control}
+              errors={errors}
+              events={events}
+              isLoadingEvents={isLoadingEvents}
+            />
+          )}
           {currentTab === 1 && <SocialLinksTab control={control} errors={errors} />}
         </Box>
       </Paper>

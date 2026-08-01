@@ -533,8 +533,18 @@ Made with ❤️ for TEDx Damascus
 
 
 ```
-dashboard
+TEDX-Damascus-Dashboard
 ├─ .eslintrc.cjs
+├─ .idea
+│  ├─ codeStyles
+│  │  ├─ codeStyleConfig.xml
+│  │  └─ Project.xml
+│  ├─ dashboard.iml
+│  ├─ inspectionProfiles
+│  │  └─ Project_Default.xml
+│  ├─ modules.xml
+│  ├─ prettier.xml
+│  └─ vcs.xml
 ├─ .prettierignore
 ├─ .prettierrc
 ├─ eslint.config.js
@@ -574,12 +584,18 @@ dashboard
 │  │  │  ├─ blog-app
 │  │  │  │  ├─ blog-categories
 │  │  │  │  │  ├─ BlogCategoriesApi.js
-│  │  │  │  │  └─ BlogCategoriesList.jsx
+│  │  │  │  │  ├─ BlogCategoriesList.jsx
+│  │  │  │  │  └─ BlogCategory.jsx
 │  │  │  │  ├─ blog-detail
 │  │  │  │  │  ├─ Blog.jsx
+│  │  │  │  │  ├─ blogAuthorUtils.js
+│  │  │  │  │  ├─ blogFontUtils.js
+│  │  │  │  │  ├─ blogMapper.js
+│  │  │  │  │  ├─ BlogView.jsx
 │  │  │  │  │  ├─ models
 │  │  │  │  │  │  └─ BlogModel.js
 │  │  │  │  │  └─ tabs
+│  │  │  │  │     ├─ AuthorSection.jsx
 │  │  │  │  │     └─ BlogContentSeoTab.jsx
 │  │  │  │  ├─ blogs-list
 │  │  │  │  │  └─ BlogsList.jsx
@@ -604,16 +620,8 @@ dashboard
 │  │  │  │  ├─ EventsApi.js
 │  │  │  │  └─ EventsAppConfig.jsx
 │  │  │  ├─ forms-app
-│  │  │  │  ├─ form-builder
-│  │  │  │  │  ├─ AddQuestionPanel.jsx
-│  │  │  │  │  ├─ FormBuilder.jsx
-│  │  │  │  │  ├─ FormBuilderHeader.jsx
-│  │  │  │  │  ├─ FormSettings.jsx
-│  │  │  │  │  ├─ QuestionCard.jsx
-│  │  │  │  │  ├─ QuestionList.jsx
-│  │  │  │  │  ├─ questionUtils.js
-│  │  │  │  │  └─ useFormBuilder.js
 │  │  │  │  ├─ form-submissions
+│  │  │  │  │  ├─ FormSubmissionDetail.jsx
 │  │  │  │  │  └─ FormSubmissions.jsx
 │  │  │  │  ├─ forms-list
 │  │  │  │  │  ├─ FormsList.jsx
@@ -621,16 +629,41 @@ dashboard
 │  │  │  │  │  └─ FormsListTable.jsx
 │  │  │  │  ├─ FormsApi.js
 │  │  │  │  └─ FormsAppConfig.jsx
+│  │  │  ├─ home-settings-app
+│  │  │  │  ├─ home-settings
+│  │  │  │  │  └─ HomeSettingsPage.jsx
+│  │  │  │  └─ HomeSettingsApi.js
 │  │  │  ├─ not-found
 │  │  │  │  └─ NotFoundPage.jsx
-│  │  │  ├─ partners-app
-│  │  │  │  ├─ partners-details
+│  │  │  ├─ organizers-app
+│  │  │  │  ├─ organizer-detail
 │  │  │  │  │  ├─ models
-│  │  │  │  │  │  └─ PartnerModel.js
+│  │  │  │  │  │  └─ organizerModel.js
+│  │  │  │  │  ├─ organizer.jsx
+│  │  │  │  │  ├─ organizerHeader.jsx
+│  │  │  │  │  └─ tabs
+│  │  │  │  │     ├─ BasicInfoTab.jsx
+│  │  │  │  │     └─ SocialLinksTab.jsx
+│  │  │  │  ├─ organizers-list
+│  │  │  │  │  ├─ organizersList.jsx
+│  │  │  │  │  ├─ organizersListHeader.jsx
+│  │  │  │  │  └─ organizersListTable.jsx
+│  │  │  │  ├─ organizersApi.js
+│  │  │  │  └─ organizersAppConfig.jsx
+│  │  │  ├─ partners-app
+│  │  │  │  ├─ customTiersSlice.js
+│  │  │  │  ├─ partners-details
+│  │  │  │  │  ├─ components
+│  │  │  │  │  │  ├─ CustomTierField.jsx
+│  │  │  │  │  │  └─ TierSizePicker.jsx
+│  │  │  │  │  ├─ models
+│  │  │  │  │  │  ├─ PartnerModel.js
+│  │  │  │  │  │  └─ partnerTiers.js
 │  │  │  │  │  ├─ Partner.jsx
 │  │  │  │  │  ├─ PartnerHeader.jsx
 │  │  │  │  │  └─ tabs
 │  │  │  │  │     ├─ BasicInfoTab.jsx
+│  │  │  │  │     ├─ ServicesTab.jsx
 │  │  │  │  │     └─ SocialLinksTab.jsx
 │  │  │  │  ├─ partners-list
 │  │  │  │  │  ├─ PartnersList.jsx
@@ -672,6 +705,8 @@ dashboard
 │  │  │  │  │  └─ TeamListTable.jsx
 │  │  │  │  ├─ teamApi.js
 │  │  │  │  └─ teamAppConfig.jsx
+│  │  │  ├─ unauthorized
+│  │  │  │  └─ UnauthorizedPage.jsx
 │  │  │  ├─ users-app
 │  │  │  │  ├─ user-detail
 │  │  │  │  │  ├─ models
@@ -693,7 +728,9 @@ dashboard
 │  │  │     ├─ WallApi.js
 │  │  │     ├─ WallAppConfig.jsx
 │  │  │     └─ walls-list
-│  │  │        └─ WallList.jsx
+│  │  │        ├─ WallList.jsx
+│  │  │        ├─ WallListHeader.jsx
+│  │  │        └─ WallListTable.jsx
 │  │  ├─ providers
 │  │  │  └─ IntlProviderWrapper.jsx
 │  │  ├─ services
@@ -725,7 +762,8 @@ dashboard
 │  │  │  ├─ image-picker
 │  │  │  │  ├─ ImagePickerDialog.jsx
 │  │  │  │  ├─ ImagePickerField.jsx
-│  │  │  │  └─ index.js
+│  │  │  │  ├─ index.js
+│  │  │  │  └─ mediaRefUtils.js
 │  │  │  ├─ loading-spinner
 │  │  │  │  ├─ index.js
 │  │  │  │  └─ LoadingSpinner.jsx
@@ -741,11 +779,24 @@ dashboard
 │  │  │  │  ├─ index.js
 │  │  │  │  └─ PageLayout.jsx
 │  │  │  ├─ rich-text-editor
+│  │  │  │  ├─ fontFamilies.js
+│  │  │  │  ├─ FontSize.js
+│  │  │  │  ├─ imageAlignPlugin.js
+│  │  │  │  ├─ imageAlignUtils.js
+│  │  │  │  ├─ imageNodeUtils.js
+│  │  │  │  ├─ ImageToolbar.jsx
 │  │  │  │  ├─ index.js
-│  │  │  │  └─ RichTextEditor.jsx
-│  │  │  └─ status-badge
-│  │  │     ├─ index.js
-│  │  │     └─ StatusBadge.jsx
+│  │  │  │  ├─ ResizableImage.js
+│  │  │  │  ├─ RichTextContent.jsx
+│  │  │  │  ├─ RichTextEditor.jsx
+│  │  │  │  ├─ ToolbarTooltip.jsx
+│  │  │  │  ├─ UrlInputDialog.jsx
+│  │  │  │  └─ urlUtils.js
+│  │  │  ├─ status-badge
+│  │  │  │  ├─ index.js
+│  │  │  │  └─ StatusBadge.jsx
+│  │  │  └─ wysiwyg-editor
+│  │  │     └─ WYSIWYGEditor.jsx
 │  │  ├─ store
 │  │  │  ├─ apiService.js
 │  │  │  ├─ index.js
@@ -772,6 +823,7 @@ dashboard
 │  └─ utils
 │     └─ helpers.js
 ├─ tailwind.config.js
+├─ vercel.json
 └─ vite.config.js
 
 ```

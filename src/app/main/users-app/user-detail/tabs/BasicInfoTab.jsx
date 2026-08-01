@@ -13,12 +13,7 @@ import {
 } from '@mui/material';
 import { PERMISSION_RESOURCES, PERMISSION_ACTIONS } from '../models/UserModel';
 
-const ROLES = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'user', label: 'User' },
-];
-
-const ACTION_LABELS = { view: 'View', create: 'Create', edit: 'Edit', delete: 'Delete' };
+const ACTION_LABELS = { create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
 const RESOURCE_LABELS = {
   blogs: 'Blogs',
   users: 'Users',
@@ -168,30 +163,6 @@ function BasicInfoTab({ control, errors, isDisabled, isOwnSuperadmin, isNew }) {
 
         <Grid item xs={12} md={6}>
           <Controller
-            name="role"
-            control={control}
-            render={({ field }) => (
-              <FormControl
-                fullWidth
-                required
-                error={!!errors.role}
-                disabled={isDisabled || isOwnSuperadmin}
-              >
-                <InputLabel>Role</InputLabel>
-                <Select {...field} label="Role">
-                  {ROLES.map((role) => (
-                    <MenuItem key={role.value} value={role.value}>
-                      {role.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
             name="status"
             control={control}
             render={({ field }) => (
@@ -217,7 +188,7 @@ function BasicInfoTab({ control, errors, isDisabled, isOwnSuperadmin, isNew }) {
               }}
             >
               <Typography variant="body2" sx={{ color: '#E65100' }}>
-                As a Super Admin you cannot change your own role or status.
+                As a Super Admin you cannot change your own status.
               </Typography>
             </Box>
           </Grid>

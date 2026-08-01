@@ -14,22 +14,79 @@ import {
 } from '../PartnersApi';
 import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
+import ServicesTab from './tabs/ServicesTab';
 import PartnerModel from './models/PartnerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 
-const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
+const translationDtoSchema = (fieldLabel = 'This field') =>
+  z.object({
+    en: z
+      .string()
+      .min(1, `${fieldLabel} (English) is required`)
+      .min(4, `${fieldLabel} (English) must be at least 4 characters`)
+      .max(1000, `${fieldLabel} (English) must not exceed 1000 characters`),
+    ar: z
+      .string()
+      .min(1, `${fieldLabel} (Arabic) is required`)
+      .min(4, `${fieldLabel} (Arabic) must be at least 4 characters`)
+      .max(1000, `${fieldLabel} (Arabic) must not exceed 1000 characters`),
+  });
+
+const serviceSchema = z.object({
+  title: z.string().min(1, 'Service title is required'),
+  description: translationDtoSchema('Service description'),
+});
 
 const partnerSchema = z.object({
-  name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
-  slug: localeObjectSchema.optional(),
-  description: localeObjectSchema.optional(),
-  image: z.string().optional(),
-  partnership_type: z.string().min(1, 'Partnership type is required'),
-  website_url: z.string().optional(),
-  instagram_url: z.string().optional(),
-  linkedin_url: z.string().optional(),
-  facebook_url: z.string().optional(),
+  name: translationDtoSchema('Name'),
+
+  slug: translationDtoSchema('Slug'),
+
+  image: z.string().min(1, 'Image is required').url('Image must be a valid URL'),
+
+  partner_ship_type: z
+    .string()
+    .min(4, 'Partner type must be at least 4 characters')
+    .max(25, 'Partner type must not exceed 25 characters'),
+
+  custom_card_size: z.string().optional(),
+
+  year: z.coerce
+    .number({ required_error: 'Year is required', invalid_type_error: 'Year must be a number' })
+    .int('Year must be a whole number')
+    .min(2026, 'Year must be 2026 or later')
+    .max(2060, 'Year must be 2060 or earlier'),
+
+  short_description: translationDtoSchema('Short description'),
+  long_description: translationDtoSchema('Long description'),
+
+  social_links: z
+    .array(z.string().min(1, 'Link cannot be empty'))
+    .min(1, 'At least one social link is required'),
+
+  contact_info: z.object({
+    email: z.string().min(1, 'Email is required').email('Invalid email address'),
+    phone: z.string().min(1, 'Phone number is required'),
+    address: translationDtoSchema('Address'),
+  }),
+
+  services: z.array(serviceSchema).min(1, 'At least one service is required'),
 });
+
+const TAB_FIELDS = [
+  [
+    'name',
+    'slug',
+    'image',
+    'partner_ship_type',
+    'custom_card_size',
+    'year',
+    'short_description',
+    'long_description',
+  ],
+  ['social_links', 'contact_info'],
+  ['services'],
+];
 
 function Partner() {
   const { partnerId } = useParams();
@@ -47,6 +104,8 @@ function Partner() {
     control,
     handleSubmit,
     reset,
+    register,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(partnerSchema),
@@ -55,47 +114,57 @@ function Partner() {
 
   useEffect(() => {
     if (partner && !isNew) {
-      const links = Array.isArray(partner.social_links) ? partner.social_links : [];
-      const website_url =
-        links.find(
-          (u) => !u.includes('instagram') && !u.includes('linkedin') && !u.includes('facebook'),
-        ) ?? '';
-      const instagram_url = links.find((u) => u.includes('instagram')) ?? '';
-      const linkedin_url = links.find((u) => u.includes('linkedin')) ?? '';
-      const facebook_url = links.find((u) => u.includes('facebook')) ?? '';
-
       reset({
         name: ensureLocaleValue(partner.name),
         slug: ensureLocaleValue(partner.slug),
-        description: ensureLocaleValue(partner.description),
         image: partner.image || '',
-        partnership_type: partner.partnership_type || '',
-        website_url,
-        instagram_url,
-        linkedin_url,
-        facebook_url,
+        partner_ship_type: partner.partner_ship_type || '',
+        custom_card_size: partner.custom_card_size || '',
+        year: partner.year || new Date().getFullYear(),
+        short_description: ensureLocaleValue(partner.short_description),
+        long_description: ensureLocaleValue(partner.long_description),
+        social_links:
+          Array.isArray(partner.social_links) && partner.social_links.length
+            ? partner.social_links
+            : [''],
+        contact_info: {
+          email: partner.contact_info?.email || '',
+          phone: partner.contact_info?.phone || '',
+          address: ensureLocaleValue(partner.contact_info?.address),
+        },
+        services: Array.isArray(partner.services)
+          ? partner.services.map((s) => ({
+              title: s.title || '',
+              description: ensureLocaleValue(s.description),
+            }))
+          : [],
       });
     }
   }, [partner, isNew, reset]);
 
   const onSubmit = async (formData) => {
     try {
-      const socialLinks = [
-        formData.website_url,
-        formData.instagram_url,
-        formData.linkedin_url,
-        formData.facebook_url,
-      ].filter((u) => u?.trim());
+      const cleanedSocialLinks = (formData.social_links || [])
+        .map((link) => (typeof link === 'string' ? link.trim() : ''))
+        .filter((link) => link !== '');
 
       const payload = {
         name: formData.name,
         slug: formData.slug,
-        description: formData.description,
-        partnership_type: formData.partnership_type,
+        partner_ship_type: formData.partner_ship_type,
+        custom_card_size: formData.custom_card_size || undefined,
+        year: formData.year,
+        short_description: formData.short_description,
+        long_description: formData.long_description,
+        social_links: cleanedSocialLinks,
+        contact_info: formData.contact_info,
+        services: formData.services || [],
       };
-
-      if (formData.image) payload.image = formData.image;
-      if (socialLinks.length) payload.social_links = socialLinks;
+      if (isNew) {
+  payload.image = formData.image;
+} else {
+  delete payload.image;
+}
 
       if (isNew) {
         await createPartner(payload).unwrap();
@@ -105,8 +174,25 @@ function Partner() {
         enqueueSnackbar('Partner updated successfully', { variant: 'success' });
       }
       navigate('/partners');
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} partner`, { variant: 'error' });
+    } catch (error) {
+      console.error('Save failed:', error);
+      const backendMessage = error?.data?.details?.[0]?.message;
+      enqueueSnackbar(backendMessage || `Failed to ${isNew ? 'create' : 'update'} partner`, {
+        variant: 'error',
+      });
+    }
+  };
+
+  const onInvalid = (formErrors) => {
+    enqueueSnackbar('Please fix the highlighted fields before saving', { variant: 'error' });
+
+    const errorFieldNames = Object.keys(formErrors);
+    const tabIndex = TAB_FIELDS.findIndex((fields) =>
+      fields.some((f) => errorFieldNames.includes(f)),
+    );
+
+    if (tabIndex !== -1) {
+      setCurrentTab(tabIndex);
     }
   };
 
@@ -139,10 +225,11 @@ function Partner() {
           >
             Cancel
           </Button>
+
           <Button
             variant="contained"
             startIcon={isSaving ? <CircularProgress size={14} color="inherit" /> : <Save />}
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, onInvalid)}
             disabled={isSaving}
             sx={{
               bgcolor: 'var(--color-primary)',
@@ -169,12 +256,27 @@ function Partner() {
             '& .MuiTabs-indicator': { backgroundColor: 'var(--color-primary)' },
           }}
         >
-          <Tab label="Partner Information" />
-          <Tab label="Social Links" />
+          <Tab
+            label="Partner Information"
+            sx={{ color: TAB_FIELDS[0].some((f) => errors[f]) ? 'error.main' : undefined }}
+          />
+          <Tab
+            label="Social & Contact Links"
+            sx={{ color: TAB_FIELDS[1].some((f) => errors[f]) ? 'error.main' : undefined }}
+          />
+          <Tab
+            label="Services"
+            sx={{ color: TAB_FIELDS[2].some((f) => errors[f]) ? 'error.main' : undefined }}
+          />
         </Tabs>
         <Box>
-          {currentTab === 0 && <BasicInfoTab control={control} errors={errors} />}
+          {currentTab === 0 && (
+            <BasicInfoTab control={control} errors={errors} setValue={setValue} />
+          )}
           {currentTab === 1 && <SocialLinksTab control={control} errors={errors} />}
+          {currentTab === 2 && (
+            <ServicesTab control={control} register={register} errors={errors} />
+          )}
         </Box>
       </Paper>
     </div>

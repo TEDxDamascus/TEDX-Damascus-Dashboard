@@ -4,7 +4,7 @@ import axiosInstance from '../../services/axiosInstance';
 export const addTagTypes = ['Users', 'User'];
 
 export async function searchUserOptions(query) {
-  const { data } = await axiosInstance.get('/users', {
+  const { data } = await axiosInstance.get('users/admins', {
     params: { search: query, limit: 20 },
   });
   const items = data?.data ?? [];
@@ -18,7 +18,7 @@ const usersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query({
       query: ({ page = 1, pageSize = 10, search } = {}) => ({
-        url: '/users',
+        url: 'users/admins',
         method: 'GET',
         params: { page, limit: pageSize, search },
       }),
@@ -30,7 +30,7 @@ const usersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
     }),
 
     getUser: builder.query({
-      query: (userId) => ({ url: `/users/${userId}`, method: 'GET' }),
+      query: (userId) => ({ url: `/admin/users/${userId}`, method: 'GET' }),
       transformResponse: (response) => {
         const u = response?.data ?? response;
         return { ...u, id: u._id || u.id };
@@ -38,19 +38,25 @@ const usersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
       providesTags: ['User'],
     }),
 
+    getUserPermissions: builder.query({
+      query: (userId) => ({ url: `/admin/users/${userId}/permissions`, method: 'GET' }),
+      transformResponse: (response) => response?.data ?? response ?? {},
+      providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+    }),
+
     createUser: builder.mutation({
-      query: (data) => ({ url: '/users', method: 'POST', data }),
+      query: (data) => ({ url: '/admin/users', method: 'POST', data }),
       invalidatesTags: ['Users'],
     }),
 
     updateUser: builder.mutation({
-      query: ({ id, data }) => ({ url: `/users/${id}`, method: 'PATCH', data }),
+      query: ({ id, data }) => ({ url: `/admin/users/${id}`, method: 'PATCH', data }),
       invalidatesTags: ['Users', 'User'],
     }),
 
     updateUserPermissions: builder.mutation({
       query: ({ id, permissions }) => ({
-        url: `/users/${id}/permissions`,
+        url: `/admin/users/${id}/permissions`,
         method: 'PATCH',
         data: permissions,
       }),
@@ -60,7 +66,7 @@ const usersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
     bulkUpdateUsers: builder.mutation({
       async queryFn({ ids, data }, _api, _extraOptions, baseQuery) {
         const results = await Promise.all(
-          ids.map((id) => baseQuery({ url: `/users/${id}`, method: 'PATCH', data })),
+          ids.map((id) => baseQuery({ url: `/admin/users/${id}`, method: 'PATCH', data })),
         );
         const errors = results.filter((r) => r.error);
         if (errors.length) return errors[0];
@@ -74,6 +80,7 @@ const usersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
 export const {
   useGetUsersQuery,
   useGetUserQuery,
+  useGetUserPermissionsQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useUpdateUserPermissionsMutation,

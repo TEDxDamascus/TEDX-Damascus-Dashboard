@@ -5,6 +5,7 @@ const TeamMemberModel = () => ({
   bio: defaultLocaleValue(),
   image: '',
   year: new Date().getFullYear().toString(),
+  event_id: '',
   linkedin_url: '',
   twitter_url: '',
   facebook_url: '',

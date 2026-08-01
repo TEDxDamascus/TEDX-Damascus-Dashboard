@@ -15,7 +15,10 @@ import { Edit } from '@mui/icons-material';
 import Breadcrumb from '../../../shared-components/breadcrumb';
 import { useGetBlogQuery } from '../BlogsApi';
 import { mapBlogFromApi } from './blogMapper';
+import { getAuthorDisplayName } from './blogAuthorUtils';
 import { mediaFormValueToPreviewSrc } from '../../../shared-components/image-picker';
+import RichTextContent from '../../../shared-components/rich-text-editor/RichTextContent';
+import { blogFontValueToCssFamily } from './blogFontUtils';
 
 function getLocalizedText(value, loc = 'en') {
   if (!value) return '';
@@ -83,6 +86,12 @@ function BlogView() {
   const title = getLocalizedText(blog.title, locale);
   const description = getLocalizedText(blog.description, locale);
   const content = getLocalizedText(blog.content, locale);
+  const authorName = getAuthorDisplayName(blog, locale);
+  const authorDescription = getLocalizedText(blog.author_description, locale);
+  const authorImageSrc =
+    mediaFormValueToPreviewSrc(blog.author_image) ||
+    (typeof blog.author_image_url === 'string' ? blog.author_image_url.trim() : '');
+  const contentFont = blogFontValueToCssFamily(getLocalizedText(blog.content_font, locale));
   const isPublished = blog.status === 'published';
 
   return (
@@ -138,12 +147,40 @@ function BlogView() {
             variant="outlined"
           />
         )}
-        {asPlainLabel(blog.author_user?.label, locale) && (
+        {authorName && (
           <Typography variant="body2" color="text.secondary">
-            Author: {asPlainLabel(blog.author_user.label, locale)}
+            Author: {authorName}
           </Typography>
         )}
       </div>
+
+      {authorName && (authorImageSrc || authorDescription) && (
+        <Paper elevation={0} sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="overline" color="text.secondary">
+            About the author
+          </Typography>
+          <Box sx={{ mt: 1, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+            {authorImageSrc ? (
+              <Box
+                component="img"
+                src={authorImageSrc}
+                alt=""
+                sx={{ width: 72, height: 72, borderRadius: 1, objectFit: 'cover' }}
+              />
+            ) : null}
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {authorName}
+              </Typography>
+              {authorDescription && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {authorDescription}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </Paper>
+      )}
 
       {mediaFormValueToPreviewSrc(blog.blog_image) ? (
         <Box sx={{ mb: 3, maxWidth: 720 }}>
@@ -175,14 +212,9 @@ function BlogView() {
         <Typography variant="overline" color="text.secondary">
           Content
         </Typography>
-        <Typography
-          variant="body1"
-          component="div"
-          dir={locale === 'ar' ? 'rtl' : 'ltr'}
-          sx={{ whiteSpace: 'pre-wrap', mt: 1, lineHeight: 1.7 }}
-        >
-          {content.trim() ? content : '—'}
-        </Typography>
+        <Box sx={{ mt: 1, lineHeight: 1.7, fontFamily: contentFont }}>
+          <RichTextContent html={content} dir={locale === 'ar' ? 'rtl' : 'ltr'} />
+        </Box>
       </Paper>
 
       {Array.isArray(blog.tags) && blog.tags.length > 0 && (

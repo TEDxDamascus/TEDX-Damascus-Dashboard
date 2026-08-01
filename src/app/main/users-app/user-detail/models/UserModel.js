@@ -11,7 +11,7 @@ const PERMISSION_RESOURCES = [
   'general-settings',
   'wall',
 ];
-const PERMISSION_ACTIONS = ['view', 'create', 'edit', 'delete'];
+const PERMISSION_ACTIONS = ['create', 'read', 'update', 'delete'];
 
 export function buildDefaultPermissions(allTrue = false) {
   return Object.fromEntries(
@@ -20,6 +20,25 @@ export function buildDefaultPermissions(allTrue = false) {
       Object.fromEntries(PERMISSION_ACTIONS.map((a) => [a, allTrue])),
     ]),
   );
+}
+
+export function permissionsToArray(permissions) {
+  return Object.entries(permissions ?? {}).flatMap(([resource, actions]) =>
+    Object.entries(actions ?? {})
+      .filter(([, granted]) => granted)
+      .map(([action]) => `${resource}:${action}`),
+  );
+}
+
+export function permissionsFromArray(permissionsArray) {
+  const permissions = buildDefaultPermissions(false);
+  (permissionsArray ?? []).forEach((entry) => {
+    const [resource, action] = String(entry).split(':');
+    if (permissions[resource] && action in permissions[resource]) {
+      permissions[resource][action] = true;
+    }
+  });
+  return permissions;
 }
 
 export { PERMISSION_RESOURCES, PERMISSION_ACTIONS };
