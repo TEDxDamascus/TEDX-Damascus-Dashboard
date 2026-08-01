@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { PERMISSION_RESOURCES, PERMISSION_ACTIONS } from '../models/UserModel';
 
-const ACTION_LABELS = { view: 'View', create: 'Create', edit: 'Edit', delete: 'Delete' };
+const ACTION_LABELS = { create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
 const RESOURCE_LABELS = {
   blogs: 'Blogs',
   users: 'Users',

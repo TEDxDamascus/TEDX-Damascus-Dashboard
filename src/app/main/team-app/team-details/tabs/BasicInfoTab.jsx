@@ -6,7 +6,7 @@ import { ImagePickerField } from '../../../../shared-components/image-picker';
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 2060 - CURRENT_YEAR + 1 }, (_, i) => String(CURRENT_YEAR + i));
 
-function BasicInfoTab({ control, errors }) {
+function BasicInfoTab({ control, errors, events = [], isLoadingEvents }) {
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
@@ -55,6 +55,33 @@ function BasicInfoTab({ control, errors }) {
                   {YEARS.map((y) => (
                     <MenuItem key={y} value={y}>
                       {y}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="event_id"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.event_id}>
+                <InputLabel>Event</InputLabel>
+                <Select {...field} value={field.value ?? ''} label="Event">
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {isLoadingEvents && (
+                    <MenuItem value={field.value} disabled>
+                      Loading events...
+                    </MenuItem>
+                  )}
+                  {events.map((event) => (
+                    <MenuItem key={event.id} value={event.id}>
+                      {event.title?.en || event.title?.ar || event.id}
                     </MenuItem>
                   ))}
                 </Select>

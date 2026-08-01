@@ -17,7 +17,11 @@ import {
   useUpdateUserPermissionsMutation,
 } from '../UsersApi';
 import BasicInfoTab from './tabs/BasicInfoTab';
-import UserModel, { buildDefaultPermissions } from './models/UserModel';
+import UserModel, {
+  buildDefaultPermissions,
+  permissionsToArray,
+  permissionsFromArray,
+} from './models/UserModel';
 
 const baseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -25,6 +29,7 @@ const baseSchema = z.object({
   status: z.string().min(1, 'Status is required'),
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
+  permissions: z.record(z.string(), z.record(z.string(), z.boolean())).optional(),
 });
 
 const userSchema = baseSchema.superRefine((data, ctx) => {
@@ -102,21 +107,25 @@ function User() {
 
   useEffect(() => {
     if (permissions) {
-      setValue('permissions', { ...buildDefaultPermissions(false), ...permissions });
+      const normalized = Array.isArray(permissions)
+        ? permissionsFromArray(permissions)
+        : { ...buildDefaultPermissions(false), ...permissions };
+      setValue('permissions', normalized);
     }
   }, [permissions, setValue]);
 
   const onSubmit = async (data) => {
     const { permissions: permissionsData, ...basicInfo } = data;
     basicInfo.role = 'admin';
+    const permissionsArray = permissionsToArray(permissionsData);
     try {
       if (isNew) {
-        await createUser(basicInfo).unwrap();
+        await createUser({ ...basicInfo, permissions: permissionsArray }).unwrap();
         enqueueSnackbar('User created successfully', { variant: 'success' });
       } else {
         await Promise.all([
           updateUser({ id: userId, data: basicInfo }).unwrap(),
-          updateUserPermissions({ id: userId, permissions: permissionsData }).unwrap(),
+          updateUserPermissions({ id: userId, permissions: permissionsArray }).unwrap(),
         ]);
         enqueueSnackbar('User updated successfully', { variant: 'success' });
       }

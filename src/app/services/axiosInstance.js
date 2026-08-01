@@ -43,7 +43,11 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
-    if (status !== 401 || original._retry || original.url?.includes('/auth/login')) {
+    if (status !== 401 || original.url?.includes('/auth/login')) {
+      return Promise.reject(normalizeError(error));
+    }
+    if (original._retry) {
+      forceLogout();
       return Promise.reject(normalizeError(error));
     }
     if (isRefreshing) {
@@ -73,10 +77,7 @@ axiosInstance.interceptors.response.use(
       return axiosInstance(original);
     } catch (refreshError) {
       processQueue(refreshError, null);
-      const refreshStatus = refreshError?.response?.status;
-      if (refreshStatus === 401 || refreshStatus === 403) {
-        forceLogout();
-      }
+      forceLogout();
       return Promise.reject(normalizeError(refreshError));
     } finally {
       isRefreshing = false;

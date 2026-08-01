@@ -18,11 +18,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleForcedLogout = () => {
       dispatch(logoutAction());
+      enqueueSnackbar('Unauthorized. Please sign in again.', { variant: 'error' });
       navigate('/sign-in', { replace: true });
     };
     window.addEventListener('auth:logout', handleForcedLogout);
     return () => window.removeEventListener('auth:logout', handleForcedLogout);
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, enqueueSnackbar]);
 
   const signIn = async (email, password) => {
     const { data } = await authLogin(email, password);

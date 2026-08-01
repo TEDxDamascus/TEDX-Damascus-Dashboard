@@ -4,7 +4,7 @@ import axiosInstance from '../../services/axiosInstance';
 export const addTagTypes = ['Users', 'User'];
 
 export async function searchUserOptions(query) {
-  const { data } = await axiosInstance.get('/admin/users', {
+  const { data } = await axiosInstance.get('users/admins', {
     params: { search: query, limit: 20 },
   });
   const items = data?.data ?? [];
@@ -18,7 +18,7 @@ const usersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query({
       query: ({ page = 1, pageSize = 10, search } = {}) => ({
-        url: '/admin/users',
+        url: 'users/admins',
         method: 'GET',
         params: { page, limit: pageSize, search },
       }),
