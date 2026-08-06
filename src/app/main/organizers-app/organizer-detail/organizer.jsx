@@ -22,22 +22,38 @@ import MediaLinksTab from './tabs/SocialLinksTab';
 import OrganizerModel from './models/organizerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 
-const localeObjectSchema = z.object({
-  ar: z.string(),
-  en: z.string(),
-});
+const translationDtoSchema = (fieldLabel = 'This field') =>
+  z.object({
+    en: z
+      .string()
+      .min(1, `${fieldLabel} (English) is required`)
+      .min(4, `${fieldLabel} (English) must be at least 4 characters`)
+      .max(1000, `${fieldLabel} (English) must not exceed 1000 characters`),
+    ar: z
+      .string()
+      .min(1, `${fieldLabel} (Arabic) is required`)
+      .min(4, `${fieldLabel} (Arabic) must be at least 4 characters`)
+      .max(1000, `${fieldLabel} (Arabic) must not exceed 1000 characters`),
+  });
 
 const organizerSchema = z.object({
-  name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
-  bio: localeObjectSchema.optional(),
-  image: z.string().optional(),
-  role: z.string().optional(),
+  name: translationDtoSchema('Name'),
+  image: z.string().min(1, 'Image is required').url('Image must be a valid URL'),
+  bio: translationDtoSchema('Bio'),
+  role: z.string().min(1, 'Role is required'),
+  gallery: z
+    .array(z.string().url('Each gallery image must be a valid URL'))
+    .min(1, 'At least one gallery image is required'),
   linkedin_url: z.string().optional(),
   twitter_url: z.string().optional(),
   facebook_url: z.string().optional(),
   website_url: z.string().optional(),
-  gallery: z.array(z.string()).optional(),
 });
+
+const TAB_FIELDS = [
+  ['name', 'image', 'bio', 'role'],
+  ['social_links', 'linkedin_url', 'twitter_url', 'facebook_url', 'website_url', 'gallery'],
+];
 
 function Organizer() {
   const { organizerId } = useParams();
@@ -53,11 +69,8 @@ function Organizer() {
   });
 
   const [createOrganizer, { isLoading: isCreating }] = useCreateOrganizerMutation();
-
   const [updateOrganizer, { isLoading: isUpdating }] = useUpdateOrganizerMutation();
-
   const isSaving = isCreating || isUpdating;
-
   const {
     control,
     handleSubmit,
@@ -71,10 +84,19 @@ function Organizer() {
   useEffect(() => {
     if (organizer && !isNew) {
       const links = Array.isArray(organizer.social_links) ? organizer.social_links : [];
+
+      const imageUrl = typeof organizer.image === 'object' ? organizer.image?.url : organizer.image;
+
+      const galleryUrls = Array.isArray(organizer.gallery)
+        ? organizer.gallery
+            .map((item) => (typeof item === 'object' ? item?.url : item))
+            .filter(Boolean)
+        : [];
+
       reset({
         name: ensureLocaleValue(organizer.name),
         bio: ensureLocaleValue(organizer.bio),
-        image: organizer.image || '',
+        image: imageUrl || '',
         role: organizer.role || '',
         linkedin_url: links.find((u) => u.includes('linkedin')) || '',
         twitter_url: links.find((u) => u.includes('twitter') || u.includes('x.com')) || '',
@@ -87,7 +109,7 @@ function Organizer() {
               !u.includes('x.com') &&
               !u.includes('facebook'),
           ) || '',
-        gallery: Array.isArray(organizer.gallery) ? organizer.gallery : [],
+        gallery: galleryUrls,
       });
     }
   }, [organizer, isNew, reset]);
@@ -104,9 +126,9 @@ function Organizer() {
       name: data.name,
       bio: data.bio,
       role: data.role,
-      ...(data.image ? { image: data.image } : {}),
-      ...(social_links.length ? { social_links } : {}),
-      ...(data.gallery?.length ? { gallery: data.gallery } : {}),
+      image: data.image,
+      social_links,
+      gallery: data.gallery,
     };
 
     try {
@@ -118,8 +140,25 @@ function Organizer() {
         enqueueSnackbar('Organizer updated successfully', { variant: 'success' });
       }
       navigate('/organizers');
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} organizer`, { variant: 'error' });
+    } catch (error) {
+      console.error('Save failed:', error);
+      const backendMessage = error?.data?.details?.[0]?.message;
+      enqueueSnackbar(backendMessage || `Failed to ${isNew ? 'create' : 'update'} organizer`, {
+        variant: 'error',
+      });
+    }
+  };
+
+  const onInvalid = (formErrors) => {
+    enqueueSnackbar('Please fix the highlighted fields before saving', { variant: 'error' });
+
+    const errorFieldNames = Object.keys(formErrors);
+    const tabIndex = TAB_FIELDS.findIndex((fields) =>
+      fields.some((f) => errorFieldNames.includes(f)),
+    );
+
+    if (tabIndex !== -1) {
+      setCurrentTab(tabIndex);
     }
   };
 
@@ -157,7 +196,7 @@ function Organizer() {
           <Button
             variant="contained"
             startIcon={isSaving ? <CircularProgress size={14} color="inherit" /> : <Save />}
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, onInvalid)}
             disabled={isSaving}
             sx={{
               bgcolor: 'var(--color-primary)',
@@ -194,8 +233,14 @@ function Organizer() {
             },
           }}
         >
-          <Tab label="Basic Information" />
-          <Tab label="Media & Links" />
+          <Tab
+            label="Basic Information"
+            sx={{ color: TAB_FIELDS[0].some((f) => errors[f]) ? 'error.main' : undefined }}
+          />
+          <Tab
+            label="Media & Links"
+            sx={{ color: TAB_FIELDS[1].some((f) => errors[f]) ? 'error.main' : undefined }}
+          />
         </Tabs>
 
         <Box>

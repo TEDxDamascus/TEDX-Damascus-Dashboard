@@ -33,7 +33,7 @@ const translationDtoSchema = (fieldLabel = 'This field') =>
   });
 
 const serviceSchema = z.object({
-  title: z.string().min(1, 'Service title is required'),
+  title: translationDtoSchema('Service title'),
   description: translationDtoSchema('Service description'),
 });
 
@@ -134,7 +134,7 @@ function Partner() {
         },
         services: Array.isArray(partner.services)
           ? partner.services.map((s) => ({
-              title: s.title || '',
+              title: ensureLocaleValue(s.title),
               description: ensureLocaleValue(s.description),
             }))
           : [],
@@ -151,6 +151,7 @@ function Partner() {
       const payload = {
         name: formData.name,
         slug: formData.slug,
+        image: formData.image,
         partner_ship_type: formData.partner_ship_type,
         custom_card_size: formData.custom_card_size || undefined,
         year: formData.year,
@@ -160,11 +161,6 @@ function Partner() {
         contact_info: formData.contact_info,
         services: formData.services || [],
       };
-      if (isNew) {
-  payload.image = formData.image;
-} else {
-  delete payload.image;
-}
 
       if (isNew) {
         await createPartner(payload).unwrap();
