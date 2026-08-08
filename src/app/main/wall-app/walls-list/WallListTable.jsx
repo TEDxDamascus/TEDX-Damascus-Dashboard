@@ -9,15 +9,24 @@ import StatusBadge from '../../../shared-components/status-badge';
 
 const TABLE_ID = 'wall';
 
+function localeText(v) {
+  if (typeof v === 'string') return v;
+  if (v && typeof v === 'object') return v.en || v.ar || '';
+  return '';
+}
+
 const COLUMNS = [
   {
     id: 'text',
     header: 'Question',
-    renderCell: (v) => (
-      <span className="font-medium text-gray-900">
-        {v || <span className="italic text-gray-400">Untitled</span>}
-      </span>
-    ),
+    renderCell: (v) => {
+      const text = localeText(v);
+      return (
+        <span className="font-medium text-gray-900">
+          {text || <span className="italic text-gray-400">Untitled</span>}
+        </span>
+      );
+    },
   },
   {
     id: 'tags',
@@ -118,7 +127,7 @@ function WallListTable({ data, totalCount, isLoading }) {
         onClose={() => setConfirmItem(null)}
         onConfirm={handleDelete}
         title="Delete Question"
-        description={`Delete "${confirmItem?.text || 'this question'}" and all its answers? This cannot be undone.`}
+        description={`Delete "${localeText(confirmItem?.text) || 'this question'}" and all its answers? This cannot be undone.`}
       />
     </>
   );

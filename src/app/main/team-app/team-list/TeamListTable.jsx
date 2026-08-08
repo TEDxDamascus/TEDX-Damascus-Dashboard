@@ -5,6 +5,7 @@ import { Edit, Visibility, DeleteOutline } from '@mui/icons-material';
 import { useDeleteTeamMemberMutation } from '../teamApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
+import { toDisplayImageUrl } from '../../../shared-components/image-picker';
 
 const TABLE_ID = 'team_members';
 
@@ -14,11 +15,11 @@ const COLUMNS = [
     header: '',
     renderCell: (value, row) => {
       const nameText = typeof row.name === 'string' ? row.name : row.name?.en || row.name?.ar || '';
-      const isUrl = typeof value === 'string' && value.startsWith('http');
+      const imageUrl = toDisplayImageUrl(value);
       return (
         <div className="flex items-center">
-          {isUrl ? (
-            <img src={value} alt={nameText} className="h-10 w-10 rounded-full object-cover" />
+          {imageUrl ? (
+            <img src={imageUrl} alt={nameText} className="h-10 w-10 rounded-full object-cover" />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tedx-red text-sm font-semibold text-white">
               {nameText.charAt(0).toUpperCase() || '?'}

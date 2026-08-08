@@ -8,6 +8,7 @@ import { useDeletePartnerMutation } from '../PartnersApi';
 
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
+import { toDisplayImageUrl } from '../../../shared-components/image-picker';
 
 const TABLE_ID = 'partners';
 
@@ -29,7 +30,7 @@ const COLUMNS = [
     renderCell: (value, row) => {
       const nameText = getDisplayName(row.name);
 
-      const imageUrl = typeof value === 'string' ? value : value?.url || '';
+      const imageUrl = toDisplayImageUrl(value);
 
       return (
         <div className="flex items-center">

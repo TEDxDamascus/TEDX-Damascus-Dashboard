@@ -5,6 +5,7 @@ import { Edit, Visibility, DeleteOutline } from '@mui/icons-material';
 import { useDeleteSpeakerMutation } from '../SpeakersApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
+import { toDisplayImageUrl } from '../../../shared-components/image-picker';
 
 const TABLE_ID = 'speakers';
 
@@ -14,10 +15,11 @@ const COLUMNS = [
     header: '',
     renderCell: (value, row) => {
       const nameText = row.name?.en || row.name?.ar || '';
+      const imageUrl = toDisplayImageUrl(value);
       return (
         <div className="flex items-center">
-          {value ? (
-            <img src={value} alt={nameText} className="h-10 w-10 rounded-full object-cover" />
+          {imageUrl ? (
+            <img src={imageUrl} alt={nameText} className="h-10 w-10 rounded-full object-cover" />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tedx-red text-sm font-semibold text-white">
               {nameText.charAt(0).toUpperCase() || '?'}

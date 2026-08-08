@@ -6,6 +6,7 @@ import { useDeleteEventMutation } from '../EventsApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import StatusBadge from '../../../shared-components/status-badge';
+import { toDisplayImageUrl } from '../../../shared-components/image-picker';
 
 const TABLE_ID = 'events';
 
@@ -21,8 +22,8 @@ const COLUMNS = [
     header: '',
     renderCell: (value, row) => (
       <div className="flex items-center">
-        {value ? (
-          <img src={value} className="h-10 w-10 rounded-full object-cover" />
+        {toDisplayImageUrl(value) ? (
+          <img src={toDisplayImageUrl(value)} className="h-10 w-10 rounded-full object-cover" />
         ) : (
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white">
             {getLocalizedText(row.title).charAt(0) || '?'}
