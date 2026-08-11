@@ -1,10 +1,11 @@
-import { Button } from '@mui/material';
+import { Button, Tabs, Tab } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Breadcrumb from '../../../shared-components/breadcrumb';
 
-function UsersListHeader() {
+function UsersListHeader({ roleTab, onRoleTabChange }) {
   const navigate = useNavigate();
+  const isAdmins = roleTab === 'admin';
 
   return (
     <div className="mb-6">
@@ -12,20 +13,35 @@ function UsersListHeader() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-tedx-dark">Users</h1>
-          <p className="mt-1 text-gray-500">Manage your TEDx Damascus users</p>
+          <p className="mt-1 text-gray-500">Manage TEDx Damascus users and admins</p>
         </div>
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => navigate('/users/add')}
+          onClick={() => navigate(`/users/add?role=${roleTab}`)}
           sx={{
             backgroundColor: 'var(--color-primary)',
             '&:hover': { backgroundColor: 'var(--color-primary-dark)' },
           }}
         >
-          Add New User
+          {isAdmins ? 'Add New Admin' : 'Add New User'}
         </Button>
       </div>
+
+      <Tabs
+        value={roleTab}
+        onChange={(_, value) => onRoleTabChange(value)}
+        sx={{
+          mt: 3,
+          borderBottom: 1,
+          borderColor: 'divider',
+          '& .MuiTab-root.Mui-selected': { color: 'var(--color-primary)' },
+          '& .MuiTabs-indicator': { backgroundColor: 'var(--color-primary)' },
+        }}
+      >
+        <Tab label="Users" value="user" />
+        <Tab label="Admins" value="admin" />
+      </Tabs>
     </div>
   );
 }
