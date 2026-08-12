@@ -10,6 +10,7 @@ import BlogContentSeoTab from './tabs/BlogContentSeoTab';
 import BlogModel from './models/BlogModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 import { useSnackbar } from 'notistack';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 import {
   useCreateBlogMutation,
   useCreateBlogReferenceMutation,
@@ -260,7 +261,9 @@ function Blog() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { enqueueSnackbar } = useSnackbar();
+  const { user, userId, canManage, needsOwnershipScope, isSuperAdmin } = useOwnershipScope();
   const isNew = pathname.endsWith('/blogs/add');
+  const isEditRoute = pathname.endsWith('/edit');
   const {
     data: blogData,
     isLoading,
@@ -273,6 +276,27 @@ function Blog() {
   const [updateBlogReference] = useUpdateBlogReferenceMutation();
   const [deleteBlogReference] = useDeleteBlogReferenceMutation();
   const [syncingRefs, setSyncingRefs] = useState(false);
+
+  const rawBlog = blogData?.data ?? blogData;
+  const canEditThisBlog = isNew || canManage(rawBlog);
+
+  useEffect(() => {
+    if (isNew || isLoading || !rawBlog) return;
+    if (isEditRoute && needsOwnershipScope && !canEditThisBlog) {
+      enqueueSnackbar('You do not have permission to edit this blog', { variant: 'warning' });
+      navigate(`/blogs/${blogId}`, { replace: true });
+    }
+  }, [
+    isNew,
+    isLoading,
+    rawBlog,
+    isEditRoute,
+    needsOwnershipScope,
+    canEditThisBlog,
+    enqueueSnackbar,
+    navigate,
+    blogId,
+  ]);
 
   const refQuery = useGetBlogReferencesByBlogQuery(blogId, {
     skip: isNew || !blogId,
@@ -369,7 +393,21 @@ function Blog() {
   const fetchRelatedBlogsOptions = (query) => searchBlogOptions(query, { excludeId: blogId });
 
   const onSubmit = async (data) => {
-    const payload = buildBlogApiPayload(data, defaultContentFont);
+    // Associate new blogs with the logged-in admin when no author was chosen
+    const formData = { ...data };
+    if (isNew && !formData.author_type && userId && !isSuperAdmin) {
+      formData.author_type = 'admin';
+      formData.author_admin = {
+        id: userId,
+        label: user?.name || user?.email || userId,
+      };
+    }
+
+    const payload = buildBlogApiPayload(formData, defaultContentFont);
+    if (isNew && userId && !payload.author_user_id && !isSuperAdmin) {
+      payload.author_user_id = userId;
+      payload.created_by = userId;
+    }
 
     if (import.meta.env.DEV) {
       console.log('[Blog] submit payload:', payload);
@@ -384,7 +422,7 @@ function Blog() {
         try {
           refFailures = await syncBlogReferencesWithServer({
             blogId: newId,
-            formRefs: data.blog_references,
+            formRefs: formData.blog_references,
             initialReferenceIds: initialReferenceIdsRef.current,
             createBlogReference,
             updateBlogReference,
@@ -403,13 +441,17 @@ function Blog() {
         }
         navigate(newId ? `/blogs/${newId}` : '/blogs');
       } else {
+        if (!canEditThisBlog) {
+          enqueueSnackbar('You do not have permission to edit this blog', { variant: 'error' });
+          return;
+        }
         await updateBlog({ id: blogId, data: payload }).unwrap();
         setSyncingRefs(true);
         let refFailures = 0;
         try {
           refFailures = await syncBlogReferencesWithServer({
             blogId,
-            formRefs: data.blog_references,
+            formRefs: formData.blog_references,
             initialReferenceIds: initialReferenceIdsRef.current,
             createBlogReference,
             updateBlogReference,

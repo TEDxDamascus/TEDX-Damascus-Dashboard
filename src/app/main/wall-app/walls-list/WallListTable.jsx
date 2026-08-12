@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import { Edit, DeleteOutline } from '@mui/icons-material';
+import { Edit, Visibility, DeleteOutline } from '@mui/icons-material';
 import { useDeleteWallQuestionMutation } from '../WallApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import StatusBadge from '../../../shared-components/status-badge';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'wall';
 
@@ -82,10 +83,16 @@ const COLUMNS = [
 function WallListTable({ data, totalCount, isLoading }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { canManage } = useOwnershipScope();
   const [deleteQuestion] = useDeleteWallQuestionMutation();
   const [confirmItem, setConfirmItem] = useState(null);
 
   const handleDelete = async () => {
+    if (!canManage(confirmItem)) {
+      enqueueSnackbar('You can only delete records you created', { variant: 'warning' });
+      setConfirmItem(null);
+      return;
+    }
     try {
       await deleteQuestion(confirmItem.id).unwrap();
       enqueueSnackbar('Question deleted', { variant: 'success' });
@@ -95,19 +102,40 @@ function WallListTable({ data, totalCount, isLoading }) {
     }
   };
 
-  const actions = (row) => [
-    {
-      icon: <Edit style={{ fontSize: 18 }} />,
-      title: 'Edit & Answers',
-      onClick: (e) => { e.stopPropagation(); navigate(`/wall/${row.id}`, { state: { question: row } }); },
-    },
-    {
-      icon: <DeleteOutline style={{ fontSize: 18 }} />,
-      title: 'Delete',
-      danger: true,
-      onClick: (e) => { e.stopPropagation(); setConfirmItem(row); },
-    },
-  ];
+  const actions = (row) => {
+    const rowActions = [
+      {
+        icon: <Visibility style={{ fontSize: 18 }} />,
+        title: 'View',
+        onClick: (e) => {
+          e.stopPropagation();
+          navigate(`/wall/${row.id}`, { state: { question: row } });
+        },
+      },
+    ];
+    if (canManage(row)) {
+      rowActions.push(
+        {
+          icon: <Edit style={{ fontSize: 18 }} />,
+          title: 'Edit & Answers',
+          onClick: (e) => {
+            e.stopPropagation();
+            navigate(`/wall/${row.id}`, { state: { question: row } });
+          },
+        },
+        {
+          icon: <DeleteOutline style={{ fontSize: 18 }} />,
+          title: 'Delete',
+          danger: true,
+          onClick: (e) => {
+            e.stopPropagation();
+            setConfirmItem(row);
+          },
+        },
+      );
+    }
+    return rowActions;
+  };
 
   return (
     <>

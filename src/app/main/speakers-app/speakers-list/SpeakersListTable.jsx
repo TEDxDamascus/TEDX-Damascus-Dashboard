@@ -6,6 +6,7 @@ import { useDeleteSpeakerMutation } from '../SpeakersApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import { toDisplayImageUrl } from '../../../shared-components/image-picker';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'speakers';
 
@@ -57,10 +58,16 @@ const COLUMNS = [
 function SpeakersListTable({ data, totalCount, isLoading }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { canManage } = useOwnershipScope();
   const [deleteSpeaker, { isLoading: isDeleting }] = useDeleteSpeakerMutation();
   const [confirmItem, setConfirmItem] = useState(null);
 
   const handleDeleteConfirm = async () => {
+    if (!canManage(confirmItem)) {
+      enqueueSnackbar('You can only delete records you created', { variant: 'warning' });
+      setConfirmItem(null);
+      return;
+    }
     try {
       await deleteSpeaker(confirmItem.id).unwrap();
       enqueueSnackbar('Speaker deleted successfully', { variant: 'success' });
@@ -70,24 +77,31 @@ function SpeakersListTable({ data, totalCount, isLoading }) {
     }
   };
 
-  const rowActions = (row) => [
-    {
-      icon: <Visibility style={{ fontSize: 18 }} />,
-      label: 'View',
-      onClick: () => navigate(`/speakers/${row.id}`),
-    },
-    {
-      icon: <Edit style={{ fontSize: 18 }} />,
-      label: 'Edit',
-      onClick: () => navigate(`/speakers/${row.id}`),
-    },
-    {
-      icon: <DeleteOutline style={{ fontSize: 18 }} />,
-      label: 'Delete',
-      danger: true,
-      onClick: () => setConfirmItem(row),
-    },
-  ];
+  const rowActions = (row) => {
+    const actions = [
+      {
+        icon: <Visibility style={{ fontSize: 18 }} />,
+        label: 'View',
+        onClick: () => navigate(`/speakers/${row.id}`),
+      },
+    ];
+    if (canManage(row)) {
+      actions.push(
+        {
+          icon: <Edit style={{ fontSize: 18 }} />,
+          label: 'Edit',
+          onClick: () => navigate(`/speakers/${row.id}`),
+        },
+        {
+          icon: <DeleteOutline style={{ fontSize: 18 }} />,
+          label: 'Delete',
+          danger: true,
+          onClick: () => setConfirmItem(row),
+        },
+      );
+    }
+    return actions;
+  };
 
   return (
     <>
