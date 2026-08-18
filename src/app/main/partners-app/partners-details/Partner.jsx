@@ -17,6 +17,7 @@ import SocialLinksTab from './tabs/SocialLinksTab';
 import ServicesTab from './tabs/ServicesTab';
 import PartnerModel from './models/PartnerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
+import { getFixedTier, getTierDisplayLabel } from './models/partnerTiers';
 
 const translationDtoSchema = (fieldLabel = 'This field') =>
   z.object({
@@ -32,17 +33,38 @@ const translationDtoSchema = (fieldLabel = 'This field') =>
       .max(1000, `${fieldLabel} (Arabic) must not exceed 1000 characters`),
   });
 
-const serviceSchema = z.object({
-  title: translationDtoSchema('Service title'),
-  description: translationDtoSchema('Service description'),
+const localeFieldSchema = z.object({
+  en: z.string().optional().or(z.literal('')),
+  ar: z.string().optional().or(z.literal('')),
 });
+
+const isLocaleEmpty = (val) => !val?.en?.trim() && !val?.ar?.trim();
+
+const checkLocaleField = (value, label, basePath, ctx) => {
+  ['en', 'ar'].forEach((locale) => {
+    const text = value?.[locale]?.trim() || '';
+    const localeName = locale === 'en' ? 'English' : 'Arabic';
+    if (!text) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${label} (${localeName}) is required`,
+        path: [...basePath, locale],
+      });
+    } else if (text.length < 4) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${label} (${localeName}) must be at least 4 characters`,
+        path: [...basePath, locale],
+      });
+    }
+  });
+};
 
 const partnerSchema = z.object({
   name: translationDtoSchema('Name'),
-
   slug: translationDtoSchema('Slug'),
 
-  image: z.string().min(1, 'Image is required').url('Image must be a valid URL'),
+  image: z.string().url('Image must be a valid URL').optional().or(z.literal('')),
 
   partner_ship_type: z
     .string()
@@ -64,13 +86,70 @@ const partnerSchema = z.object({
     .array(z.string().min(1, 'Link cannot be empty'))
     .min(1, 'At least one social link is required'),
 
-  contact_info: z.object({
-    email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    phone: z.string().min(1, 'Phone number is required'),
-    address: translationDtoSchema('Address'),
-  }),
+  contact_info: z
+    .object({
+      email: z.string().optional().or(z.literal('')),
+      phone: z.string().optional().or(z.literal('')),
+      address: z
+        .object({
+          en: z.string().optional().or(z.literal('')),
+          ar: z.string().optional().or(z.literal('')),
+        })
+        .optional(),
+    })
+    .optional()
+    .superRefine((val, ctx) => {
+      if (!val) return;
 
-  services: z.array(serviceSchema).min(1, 'At least one service is required'),
+      const hasAnyValue =
+        !!val.email?.trim() ||
+        !!val.phone?.trim() ||
+        !!val.address?.en?.trim() ||
+        !!val.address?.ar?.trim();
+
+      if (!hasAnyValue) return;
+
+      if (!val.email?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Email is required',
+          path: ['email'],
+        });
+      } else if (!z.string().email().safeParse(val.email).success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Invalid email address',
+          path: ['email'],
+        });
+      }
+
+      if (!val.phone?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Phone number is required',
+          path: ['phone'],
+        });
+      }
+    }),
+
+  services: z
+    .array(
+      z.object({
+        title: localeFieldSchema,
+        description: localeFieldSchema,
+      }),
+    )
+    .optional()
+    .superRefine((arr, ctx) => {
+      if (!arr) return;
+      arr.forEach((item, index) => {
+        const empty = isLocaleEmpty(item.title) && isLocaleEmpty(item.description);
+        if (empty) return;
+
+        checkLocaleField(item.title, 'Service title', [index, 'title'], ctx);
+        checkLocaleField(item.description, 'Service description', [index, 'description'], ctx);
+      });
+    }),
 });
 
 const TAB_FIELDS = [
@@ -114,12 +193,14 @@ function Partner() {
 
   useEffect(() => {
     if (partner && !isNew) {
+      const rawType = partner.tier?.name || partner.partner_ship_type || '';
+
       reset({
         name: ensureLocaleValue(partner.name),
         slug: ensureLocaleValue(partner.slug),
         image: partner.image || '',
-        partner_ship_type: partner.partner_ship_type || '',
-        custom_card_size: partner.custom_card_size || '',
+        partner_ship_type: getTierDisplayLabel(rawType),
+        custom_card_size: partner.custom_card_size || partner.tier?.custom_card_size || '',
         year: partner.year || new Date().getFullYear(),
         short_description: ensureLocaleValue(partner.short_description),
         long_description: ensureLocaleValue(partner.long_description),
@@ -142,42 +223,144 @@ function Partner() {
     }
   }, [partner, isNew, reset]);
 
-  const onSubmit = async (formData) => {
-    try {
-      const cleanedSocialLinks = (formData.social_links || [])
-        .map((link) => (typeof link === 'string' ? link.trim() : ''))
-        .filter((link) => link !== '');
+ const onSubmit = async (formData) => {
+  try {
+    const cleanedSocialLinks = (formData.social_links || [])
+      .map((link) => (typeof link === 'string' ? link.trim() : ''))
+      .filter((link) => link !== '');
 
-      const payload = {
-        name: formData.name,
-        slug: formData.slug,
-        image: formData.image,
-        partner_ship_type: formData.partner_ship_type,
-        custom_card_size: formData.custom_card_size || undefined,
-        year: formData.year,
-        short_description: formData.short_description,
-        long_description: formData.long_description,
-        social_links: cleanedSocialLinks,
-        contact_info: formData.contact_info,
-        services: formData.services || [],
-      };
+    // =========================
+    // CLEAN CONTACT INFO
+    // =========================
 
-      if (isNew) {
-        await createPartner(payload).unwrap();
-        enqueueSnackbar('Partner created successfully', { variant: 'success' });
-      } else {
-        await updatePartner({ id: partnerId, data: payload }).unwrap();
-        enqueueSnackbar('Partner updated successfully', { variant: 'success' });
-      }
-      navigate('/partners');
-    } catch (error) {
-      console.error('Save failed:', error);
-      const backendMessage = error?.data?.details?.[0]?.message;
-      enqueueSnackbar(backendMessage || `Failed to ${isNew ? 'create' : 'update'} partner`, {
-        variant: 'error',
+    const email = formData.contact_info?.email?.trim() || '';
+    const phone = formData.contact_info?.phone?.trim() || '';
+    const addressEn = formData.contact_info?.address?.en?.trim() || '';
+    const addressAr = formData.contact_info?.address?.ar?.trim() || '';
+
+    const hasAddress = !!addressEn || !!addressAr;
+    const hasContactInfo = !!email || !!phone || hasAddress;
+
+    const cleanedContactInfo = hasContactInfo
+      ? {
+          ...(email && { email }),
+          ...(phone && { phone }),
+
+          // Only send address if at least one locale has a value
+          ...(hasAddress && {
+            address: {
+              en: addressEn,
+              ar: addressAr,
+            },
+          }),
+        }
+      : undefined;
+
+    // =========================
+    // CLEAN SERVICES
+    // =========================
+
+    const cleanedServices = (formData.services || []).filter(
+      (s) =>
+        s.title?.en?.trim() ||
+        s.title?.ar?.trim() ||
+        s.description?.en?.trim() ||
+        s.description?.ar?.trim(),
+    );
+
+    // =========================
+    // PARTNER TIER
+    // =========================
+
+    const rawType = formData.partner_ship_type || '';
+    const fixedTier = getFixedTier(rawType);
+
+    const tierEnumMap = {
+      diamond: 'Diamond',
+      platinum: 'Platinum',
+      gold: 'Gold',
+      silver: 'Silver',
+    };
+
+    const tierType = fixedTier
+      ? tierEnumMap[fixedTier.value] || 'Other'
+      : 'Other';
+
+    // =========================
+    // PAYLOAD
+    // =========================
+
+    const payload = {
+      name: formData.name,
+      slug: formData.slug,
+
+      image: formData.image || undefined,
+
+      tier: {
+        type: tierType,
+        name: rawType,
+        size: formData.custom_card_size || undefined,
+      },
+
+      partner_ship_type: rawType,
+      custom_card_size: formData.custom_card_size || undefined,
+
+      year: formData.year,
+
+      short_description: formData.short_description,
+      long_description: formData.long_description,
+
+      social_links: cleanedSocialLinks,
+
+      contact_info: cleanedContactInfo,
+
+      services: cleanedServices,
+    };
+
+    // =========================
+    // DEBUG
+    // =========================
+
+    console.log('FORM DATA:', formData);
+    console.log('CLEANED CONTACT INFO:', cleanedContactInfo);
+    console.log('PAYLOAD:', payload);
+
+    // =========================
+    // CREATE / UPDATE
+    // =========================
+
+    if (isNew) {
+      await createPartner(payload).unwrap();
+
+      enqueueSnackbar('Partner created successfully', {
+        variant: 'success',
+      });
+    } else {
+      await updatePartner({
+        id: partnerId,
+        data: payload,
+      }).unwrap();
+
+      enqueueSnackbar('Partner updated successfully', {
+        variant: 'success',
       });
     }
-  };
+
+    navigate('/partners');
+  } catch (error) {
+    console.error('Save failed:', error);
+
+    const backendMessage = error?.data?.details?.[0]?.message;
+
+    enqueueSnackbar(
+      backendMessage ||
+        `Failed to ${isNew ? 'create' : 'update'} partner`,
+      {
+        variant: 'error',
+      },
+    );
+  }
+};
 
   const onInvalid = (formErrors) => {
     enqueueSnackbar('Please fix the highlighted fields before saving', { variant: 'error' });

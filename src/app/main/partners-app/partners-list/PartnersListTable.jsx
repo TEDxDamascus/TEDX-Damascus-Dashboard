@@ -8,6 +8,7 @@ import { useDeletePartnerMutation } from '../PartnersApi';
 
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
+import { getTierDisplayLabel } from '../partners-details/models/partnerTiers';
 
 const TABLE_ID = 'partners';
 
@@ -58,19 +59,21 @@ const COLUMNS = [
       <span className="font-medium text-tedx-dark">{getDisplayName(value)}</span>
     ),
   },
-
   {
     id: 'partner_ship_type',
-
     header: 'Type',
-
     sortable: true,
+    renderCell: (value, row) => {
+      const rawType = row?.tier?.name || value || '';
 
-    renderCell: (value) => (
-      <span className="w-fit rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        {value || '—'}
-      </span>
-    ),
+      const displayType = getTierDisplayLabel(rawType);
+
+      return (
+        <span className="w-fit rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium uppercase text-gray-600">
+          {displayType || '—'}
+        </span>
+      );
+    },
   },
 
   {

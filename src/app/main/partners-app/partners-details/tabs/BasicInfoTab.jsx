@@ -12,13 +12,23 @@ import {
 } from '@mui/material';
 
 import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
+
 import { ImagePickerField } from '../../../../shared-components/image-picker';
+
 import CustomTierField from '../components/CustomTierField';
+
 import { FIXED_TIERS, getFixedTier, isFixedTier } from '../models/partnerTiers';
 
 function BasicInfoTab({ control, errors, setValue }) {
-  const partnershipType = useWatch({ control, name: 'partner_ship_type' });
-  const cardSize = useWatch({ control, name: 'custom_card_size' });
+  const partnershipType = useWatch({
+    control,
+    name: 'partner_ship_type',
+  });
+
+  const cardSize = useWatch({
+    control,
+    name: 'custom_card_size',
+  });
 
   const [category, setCategory] = useState('');
 
@@ -27,27 +37,46 @@ function BasicInfoTab({ control, errors, setValue }) {
       setCategory('');
       return;
     }
-    setCategory(isFixedTier(partnershipType) ? partnershipType : 'other');
+
+    if (isFixedTier(partnershipType)) {
+      setCategory(partnershipType);
+    } else {
+      setCategory('other');
+    }
   }, [partnershipType]);
 
   const handleCategoryChange = (event) => {
     const value = event.target.value;
+
     setCategory(value);
 
     if (value === 'other') {
-      setValue('partner_ship_type', '', { shouldValidate: true });
-      setValue('custom_card_size', '', { shouldValidate: true });
+      setValue('partner_ship_type', '', {
+        shouldValidate: true,
+      });
+
+      setValue('custom_card_size', '', {
+        shouldValidate: true,
+      });
+
       return;
     }
 
     const tier = getFixedTier(value);
-    setValue('partner_ship_type', value, { shouldValidate: true });
-    setValue('custom_card_size', tier.size || '', { shouldValidate: true });
+
+    setValue('partner_ship_type', value, {
+      shouldValidate: true,
+    });
+
+    setValue('custom_card_size', tier?.size || '', {
+      shouldValidate: true,
+    });
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
+        {/* Partner Name */}
         <Grid item xs={12}>
           <Controller
             name="name"
@@ -65,6 +94,7 @@ function BasicInfoTab({ control, errors, setValue }) {
           />
         </Grid>
 
+        {/* Slug */}
         <Grid item xs={12}>
           <Controller
             name="slug"
@@ -82,6 +112,7 @@ function BasicInfoTab({ control, errors, setValue }) {
           />
         </Grid>
 
+        {/* Year */}
         <Grid item xs={12} sm={6}>
           <Controller
             name="year"
@@ -95,12 +126,15 @@ function BasicInfoTab({ control, errors, setValue }) {
                 fullWidth
                 error={!!errors.year}
                 helperText={errors.year?.message}
-                onChange={(e) => field.onChange(e.target.value)}
+                onChange={(e) => {
+                  field.onChange(e.target.value);
+                }}
               />
             )}
           />
         </Grid>
 
+        {/* Image */}
         <Grid item xs={12}>
           <Controller
             name="image"
@@ -118,23 +152,28 @@ function BasicInfoTab({ control, errors, setValue }) {
           />
         </Grid>
 
+        {/* Partnership Type */}
         <Grid item xs={12}>
           <FormControl fullWidth required error={!!errors.partner_ship_type}>
             <InputLabel>Partnership Type</InputLabel>
+
             <Select value={category} label="Partnership Type" onChange={handleCategoryChange}>
               {FIXED_TIERS.map((tier) => (
                 <MenuItem key={tier.value} value={tier.value}>
                   {tier.label}
                 </MenuItem>
               ))}
+
               <MenuItem value="other">Other</MenuItem>
             </Select>
+
             {errors.partner_ship_type && (
               <FormHelperText>{errors.partner_ship_type.message}</FormHelperText>
             )}
           </FormControl>
         </Grid>
 
+        {/* Custom Tier */}
         {category === 'other' && (
           <Grid item xs={12}>
             <CustomTierField
@@ -143,13 +182,21 @@ function BasicInfoTab({ control, errors, setValue }) {
               error={!!errors.partner_ship_type || !!errors.custom_card_size}
               helperText={errors.partner_ship_type?.message || errors.custom_card_size?.message}
               onChange={({ name, custom_card_size }) => {
-                setValue('partner_ship_type', name, { shouldValidate: true });
-                setValue('custom_card_size', custom_card_size, { shouldValidate: true });
+                setValue('partner_ship_type', name, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
+
+                setValue('custom_card_size', custom_card_size, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
               }}
             />
           </Grid>
         )}
 
+        {/* Short Description */}
         <Grid item xs={12}>
           <Controller
             name="short_description"
@@ -170,6 +217,7 @@ function BasicInfoTab({ control, errors, setValue }) {
           />
         </Grid>
 
+        {/* Long Description */}
         <Grid item xs={12}>
           <Controller
             name="long_description"

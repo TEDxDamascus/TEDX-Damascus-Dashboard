@@ -1,13 +1,19 @@
 import { Controller } from 'react-hook-form';
 import { TextField, Grid, Box, Typography } from '@mui/material';
-import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
+import {
+  LocaleInput,
+  localeInputTypes,
+} from '../../../../shared-components/locale-input';
 
 function SocialLinksTab({ control, errors }) {
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Typography variant="h6" className="mb-2 text-gray-700 font-medium">
+          <Typography
+            variant="h6"
+            className="mb-2 text-gray-700 font-medium"
+          >
             Social Links
           </Typography>
         </Grid>
@@ -20,12 +26,15 @@ function SocialLinksTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Website URL"
-                required
                 fullWidth
                 placeholder="https://example.com"
-                error={!!errors.social_links?.[0] || !!errors.social_links?.message}
+                error={
+                  !!errors.social_links?.[0] ||
+                  !!errors.social_links?.message
+                }
                 helperText={
-                  errors.social_links?.[0]?.message || errors.social_links?.message
+                  errors.social_links?.[0]?.message ||
+                  errors.social_links?.message
                 }
               />
             )}
@@ -33,7 +42,10 @@ function SocialLinksTab({ control, errors }) {
         </Grid>
 
         <Grid item xs={12} className="mt-4">
-          <Typography variant="h6" className="mb-2 text-gray-700 font-medium">
+          <Typography
+            variant="h6"
+            className="mb-2 text-gray-700 font-medium"
+          >
             Contact Information
           </Typography>
         </Grid>
@@ -46,7 +58,6 @@ function SocialLinksTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Email Address"
-                required
                 fullWidth
                 placeholder="info@example.com"
                 error={!!errors.contact_info?.email}
@@ -64,7 +75,6 @@ function SocialLinksTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Phone Number"
-                required
                 fullWidth
                 placeholder="+963115554433"
                 error={!!errors.contact_info?.phone}
@@ -83,7 +93,6 @@ function SocialLinksTab({ control, errors }) {
                 {...field}
                 type={localeInputTypes.textField}
                 label="Address"
-                required
                 error={!!errors.contact_info?.address}
                 helperText={
                   errors.contact_info?.address?.en?.message ||

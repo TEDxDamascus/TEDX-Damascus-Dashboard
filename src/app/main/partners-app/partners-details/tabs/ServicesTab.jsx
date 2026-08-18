@@ -40,8 +40,8 @@ function ServicesTab({ control, register, errors }) {
       )}
 
       {fields.length === 0 ? (
-        <Box className="rounded-lg border-2 border-dashed border-red-200 p-8 text-center text-gray-400">
-          At least one service is required. Click "Add Service" to add one.
+        <Box className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center text-gray-400">
+          No services added . Click "Add Service" to add a service (optional).
         </Box>
       ) : (
         <Grid container spacing={3}>
