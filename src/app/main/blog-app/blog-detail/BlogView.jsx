@@ -19,6 +19,7 @@ import { getAuthorDisplayName } from './blogAuthorUtils';
 import { mediaFormValueToPreviewSrc } from '../../../shared-components/image-picker';
 import RichTextContent from '../../../shared-components/rich-text-editor/RichTextContent';
 import { blogFontValueToCssFamily } from './blogFontUtils';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 function getLocalizedText(value, loc = 'en') {
   if (!value) return '';
@@ -39,6 +40,7 @@ function BlogView() {
   const { blogId } = useParams();
   const navigate = useNavigate();
   const [locale, setLocale] = useState('en');
+  const { canManage } = useOwnershipScope();
   const {
     data: blogData,
     isLoading,
@@ -52,6 +54,9 @@ function BlogView() {
     if (!blogData || !blogId) return null;
     return mapBlogFromApi(blogData);
   }, [blogData, blogId]);
+
+  const rawBlog = blogData?.data ?? blogData;
+  const canEdit = canManage(rawBlog);
 
   const handleLocaleChange = (_, value) => {
     if (value) setLocale(value);
@@ -118,18 +123,20 @@ function BlogView() {
           <Button variant="outlined" onClick={() => navigate('/blogs')}>
             Back to list
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<Edit />}
-            onClick={() => navigate(`/blogs/${blogId}/edit`)}
-            sx={{
-              bgcolor: 'var(--color-primary)',
-              color: '#fff',
-              '&:hover': { bgcolor: 'var(--color-primary-dark)', color: '#fff' },
-            }}
-          >
-            Edit article
-          </Button>
+          {canEdit && (
+            <Button
+              variant="contained"
+              startIcon={<Edit />}
+              onClick={() => navigate(`/blogs/${blogId}/edit`)}
+              sx={{
+                bgcolor: 'var(--color-primary)',
+                color: '#fff',
+                '&:hover': { bgcolor: 'var(--color-primary-dark)', color: '#fff' },
+              }}
+            >
+              Edit article
+            </Button>
+          )}
         </div>
       </div>
 

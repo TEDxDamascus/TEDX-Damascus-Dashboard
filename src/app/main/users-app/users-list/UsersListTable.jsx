@@ -2,13 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useSnackbar } from 'notistack';
-import { Edit, Visibility, Block, CheckCircle } from '@mui/icons-material';
-import { Checkbox } from '@mui/material';
-import { useUpdateUserMutation, useBulkUpdateUsersMutation } from '../UsersApi';
+import { Edit, Visibility, Block, CheckCircle, Delete, Security } from '@mui/icons-material';
+import { Checkbox, Chip } from '@mui/material';
+import {
+  useEnableUserMutation,
+  useDisableUserMutation,
+  useDeleteUserMutation,
+  useBulkEnableUsersMutation,
+  useBulkDisableUsersMutation,
+} from '../UsersApi';
 import { selectUser } from '../../../auth/store/userSlice';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import StatusBadge from '../../../shared-components/status-badge';
+import PermissionsDialog from '../components/PermissionsDialog';
 
 const TABLE_ID = 'users';
 
@@ -19,7 +26,12 @@ const COLUMNS = [
     renderCell: (value, row, { selectedIds, onSelectChange }) => (
       <Checkbox
         checked={selectedIds.includes(row.id)}
-        onChange={(e) => onSelectChange(row.id, e.target.checked)}
+        onChange={(e) => {
+          const checked = e.target.checked;
+          onSelectChange((prev) =>
+            checked ? [...prev, row.id] : prev.filter((x) => x !== row.id),
+          );
+        }}
       />
     ),
     headerClassName: 'w-12',
@@ -29,14 +41,35 @@ const COLUMNS = [
     id: 'name',
     header: 'Name',
     sortable: true,
-    renderCell: (value) => <span className="font-medium text-tedx-dark">{value}</span>,
+    renderCell: (value) => <span className="font-medium text-tedx-dark">{value || '—'}</span>,
   },
   { id: 'email', header: 'Email', sortable: true },
-  { id: 'role', header: 'Role', sortable: true },
   {
-    id: 'status',
+    id: 'role',
+    header: 'Role',
+    sortable: true,
+    renderCell: (value, row) => {
+      const role = value || row.role || 'user';
+      const isAdmin = role === 'admin' || role === 'superadmin';
+      return (
+        <Chip
+          label={isAdmin ? 'Admin' : 'User'}
+          size="small"
+          sx={{
+            fontWeight: 600,
+            backgroundColor: isAdmin ? '#FFF3E0' : '#E3F2FD',
+            color: isAdmin ? '#E65100' : '#1565C0',
+          }}
+        />
+      );
+    },
+  },
+  {
+    id: 'isActive',
     header: 'Status',
-    renderCell: (value) => <StatusBadge status={value === 'active' ? 'active' : 'inactive'} />,
+    renderCell: (value, row) => (
+      <StatusBadge status={(value ?? row.isActive) ? 'active' : 'inactive'} />
+    ),
   },
 ];
 
@@ -47,34 +80,61 @@ function UsersListTable({
   selectedIds,
   onSelectChange,
   onBulkAction,
+  roleTab,
 }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const currentUser = useSelector(selectUser);
-  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const [bulkUpdateUsers, { isLoading: isBulkUpdating }] = useBulkUpdateUsersMutation();
-  const [confirmItem, setConfirmItem] = useState(null);
+  const [enableUser, { isLoading: isEnabling }] = useEnableUserMutation();
+  const [disableUser, { isLoading: isDisabling }] = useDisableUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [bulkEnableUsers, { isLoading: isBulkEnabling }] = useBulkEnableUsersMutation();
+  const [bulkDisableUsers, { isLoading: isBulkDisabling }] = useBulkDisableUsersMutation();
 
-  const handleToggleStatus = async (user) => {
-    // Safety check: prevent disabling own account
-    if (user.status === 'active' && user.id === currentUser?.id) {
+  const [confirmDisable, setConfirmDisable] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [permissionsUser, setPermissionsUser] = useState(null);
+
+  const isBusy = isEnabling || isDisabling || isDeleting || isBulkEnabling || isBulkDisabling;
+
+  const handleEnable = async (user) => {
+    try {
+      await enableUser(user.id).unwrap();
+      enqueueSnackbar('User enabled successfully', { variant: 'success' });
+    } catch {
+      enqueueSnackbar('Failed to enable user', { variant: 'error' });
+    }
+  };
+
+  const handleDisable = async (user) => {
+    if (user.id === currentUser?.id) {
       enqueueSnackbar('You cannot disable your own account', { variant: 'warning' });
       return;
     }
     try {
-      const newStatus = user.status === 'active' ? 'disabled' : 'active';
-      await updateUser({ id: user.id, data: { status: newStatus } }).unwrap();
-      enqueueSnackbar(`User ${newStatus === 'active' ? 'enabled' : 'disabled'} successfully`, {
-        variant: 'success',
-      });
+      await disableUser(user.id).unwrap();
+      enqueueSnackbar('User disabled successfully', { variant: 'success' });
     } catch {
-      enqueueSnackbar('Failed to update user status', { variant: 'error' });
+      enqueueSnackbar('Failed to disable user', { variant: 'error' });
+    }
+  };
+
+  const handleDelete = async (user) => {
+    if (user.id === currentUser?.id) {
+      enqueueSnackbar('You cannot delete your own account', { variant: 'warning' });
+      return;
+    }
+    try {
+      await deleteUser(user.id).unwrap();
+      enqueueSnackbar('User deleted successfully', { variant: 'success' });
+    } catch {
+      enqueueSnackbar('Failed to delete user', { variant: 'error' });
     }
   };
 
   const handleBulkEnable = async () => {
     try {
-      await bulkUpdateUsers({ ids: selectedIds, data: { status: 'active' } }).unwrap();
+      await bulkEnableUsers({ ids: selectedIds }).unwrap();
       enqueueSnackbar(`${selectedIds.length} users enabled successfully`, { variant: 'success' });
       onBulkAction();
     } catch {
@@ -88,17 +148,12 @@ function UsersListTable({
       return;
     }
     try {
-      await bulkUpdateUsers({ ids: selectedIds, data: { status: 'disabled' } }).unwrap();
+      await bulkDisableUsers({ ids: selectedIds }).unwrap();
       enqueueSnackbar(`${selectedIds.length} users disabled successfully`, { variant: 'success' });
       onBulkAction();
     } catch {
       enqueueSnackbar('Failed to disable users', { variant: 'error' });
     }
-  };
-
-  const handleDisableConfirm = async () => {
-    await handleToggleStatus(confirmItem);
-    setConfirmItem(null);
   };
 
   const rowActions = (row) => {
@@ -115,22 +170,31 @@ function UsersListTable({
       },
     ];
 
+    if (row.role === 'admin' || row.role === 'superadmin') {
+      actions.push({
+        icon: <Security style={{ fontSize: 18 }} />,
+        label: 'Permissions',
+        onClick: () => setPermissionsUser(row),
+      });
+    }
+
     if (row.id !== currentUser?.id) {
       actions.push({
-        icon:
-          row.status === 'active' ? (
-            <Block style={{ fontSize: 18 }} />
-          ) : (
-            <CheckCircle style={{ fontSize: 18 }} />
-          ),
-        label: row.status === 'active' ? 'Disable' : 'Enable',
+        icon: row.isActive ? (
+          <Block style={{ fontSize: 18 }} />
+        ) : (
+          <CheckCircle style={{ fontSize: 18 }} />
+        ),
+        label: row.isActive ? 'Disable' : 'Enable',
         onClick: () => {
-          if (row.status === 'active') {
-            setConfirmItem(row);
-          } else {
-            handleToggleStatus(row);
-          }
+          if (row.isActive) setConfirmDisable(row);
+          else handleEnable(row);
         },
+      });
+      actions.push({
+        icon: <Delete style={{ fontSize: 18 }} />,
+        label: 'Delete',
+        onClick: () => setConfirmDelete(row),
       });
     } else {
       actions.push({
@@ -150,12 +214,12 @@ function UsersListTable({
           {
             label: 'Enable Selected',
             onClick: handleBulkEnable,
-            disabled: isBulkUpdating,
+            disabled: isBusy,
           },
           {
             label: 'Disable Selected',
             onClick: handleBulkDisable,
-            disabled: isBulkUpdating,
+            disabled: isBusy,
           },
         ]
       : [];
@@ -172,18 +236,45 @@ function UsersListTable({
         bulkActions={bulkActions}
         selectedIds={selectedIds}
         onSelectChange={onSelectChange}
-        emptyMessage="No users found. Add your first user!"
+        emptyMessage={
+          roleTab === 'admin'
+            ? 'No admins found. Add your first admin!'
+            : 'No users found. Add your first user!'
+        }
       />
 
       <ConfirmModal
-        open={!!confirmItem}
-        onClose={() => setConfirmItem(null)}
-        onConfirm={handleDisableConfirm}
-        loading={isUpdating}
+        open={!!confirmDisable}
+        onClose={() => setConfirmDisable(null)}
+        onConfirm={async () => {
+          await handleDisable(confirmDisable);
+          setConfirmDisable(null);
+        }}
+        loading={isDisabling}
         title="Disable User"
-        description={`Are you sure you want to disable ${confirmItem?.name}? They will lose access to the system.`}
+        description={`Are you sure you want to disable ${confirmDisable?.name || confirmDisable?.email}? They will lose access to the system.`}
         confirmLabel="Disable"
         variant="warning"
+      />
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          await handleDelete(confirmDelete);
+          setConfirmDelete(null);
+        }}
+        loading={isDeleting}
+        title="Delete User"
+        description={`Are you sure you want to permanently delete ${confirmDelete?.name || confirmDelete?.email}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
+
+      <PermissionsDialog
+        open={!!permissionsUser}
+        user={permissionsUser}
+        onClose={() => setPermissionsUser(null)}
       />
     </>
   );

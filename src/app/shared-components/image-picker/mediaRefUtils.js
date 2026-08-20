@@ -1,6 +1,32 @@
 /** MongoDB ObjectId: 24 hex chars (string form used by APIs). */
 const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
 
+/**
+ * Resolve any image field shape (plain URL string, `{id,url}` object, empty) to a safe
+ * `<img>` src. Absolute `http://` backend URLs are rewritten to go through the `/api`
+ * proxy (see vite.config.js / vercel.json) so they load over the page's own origin —
+ * otherwise a `http://` image embedded in an `https://` deploy (e.g. Vercel) is blocked
+ * as mixed content and silently fails to render.
+ */
+export function toDisplayImageUrl(raw) {
+  let url = '';
+  if (typeof raw === 'string') {
+    url = raw.trim();
+  } else if (raw && typeof raw === 'object') {
+    url = String(raw.url ?? raw.secure_url ?? raw.path ?? '').trim();
+  }
+  if (!url) return '';
+  if (/^http:\/\//i.test(url)) {
+    try {
+      const { pathname, search, hash } = new URL(url);
+      return `/api${pathname}${search}${hash}`;
+    } catch {
+      return url;
+    }
+  }
+  return url;
+}
+
 export function isLikelyMongoObjectId(s) {
   return typeof s === 'string' && OBJECT_ID_RE.test(s.trim());
 }
@@ -42,8 +68,8 @@ export function mediaFormValueToApiId(value) {
 /** `<img src>` / thumbnail when the form stores `{ id, url }` or a legacy URL string. */
 export function mediaFormValueToPreviewSrc(value) {
   const { id, url } = normalizeMediaFormValue(value);
-  if (url) return url;
-  if (id && /^https?:\/\//i.test(id)) return id;
+  if (url) return toDisplayImageUrl(url);
+  if (id && /^https?:\/\//i.test(id)) return toDisplayImageUrl(id);
   return '';
 }
 
@@ -51,12 +77,12 @@ export function mediaFieldToDisplayUrl(raw) {
   if (raw == null || raw === '') return '';
   if (typeof raw === 'string') {
     const t = raw.trim();
-    if (/^https?:\/\//i.test(t)) return t;
+    if (/^https?:\/\//i.test(t)) return toDisplayImageUrl(t);
     return '';
   }
   if (typeof raw === 'object' && !Array.isArray(raw)) {
     const u = raw.url ?? raw.secure_url ?? raw.path;
-    if (u && String(u).trim()) return String(u).trim();
+    if (u && String(u).trim()) return toDisplayImageUrl(String(u).trim());
   }
   return '';
 }

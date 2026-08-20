@@ -15,11 +15,13 @@ import {
 } from '@mui/material';
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 import Breadcrumb from '../../../shared-components/breadcrumb';
 import { useDeleteBlogMutation, useGetBlogsQuery, useUpdateBlogMutation } from '../BlogsApi';
 import { useGetBlogCategoriesQuery } from '../blog-categories/BlogCategoriesApi';
 import { mediaFieldToDisplayUrl } from '../../../shared-components/image-picker';
 import ConfirmModal from '../../../shared-components/confirm-modal';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 function extractItems(raw) {
   const candidates = [
@@ -81,6 +83,8 @@ const SORT_FIELD_OPTIONS = [
 
 function BlogsList() {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { withOwnerParams, filterOwned, canManage, needsOwnershipScope } = useOwnershipScope();
   const [locale, setLocale] = useState('en');
   const [categoryId, setCategoryId] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -100,17 +104,27 @@ function BlogsList() {
   }, [statusFilter, sortBy, categoryId, debouncedSearch, pageSize, locale]);
 
   const queryArgs = useMemo(
-    () => ({
+    () =>
+      withOwnerParams({
+        page,
+        limit: pageSize,
+        language: locale,
+        sort: sortBy,
+        order: 'desc',
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(categoryId ? { category_id: categoryId } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      }),
+    [
       page,
-      limit: pageSize,
-      language: locale,
-      sort: sortBy,
-      order: 'desc',
-      ...(statusFilter ? { status: statusFilter } : {}),
-      ...(categoryId ? { category_id: categoryId } : {}),
-      ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    }),
-    [page, pageSize, statusFilter, categoryId, debouncedSearch, locale, sortBy],
+      pageSize,
+      statusFilter,
+      categoryId,
+      debouncedSearch,
+      locale,
+      sortBy,
+      withOwnerParams,
+    ],
   );
 
   const { data, isLoading } = useGetBlogsQuery(queryArgs);
@@ -124,18 +138,24 @@ function BlogsList() {
     return Array.isArray(raw) ? raw : [];
   }, [categoriesData]);
 
-  const total = Number(data?.data?.total ?? 0);
+  const blogs = extractItems(data);
+  const safeBlogs = Array.isArray(blogs) ? blogs : [];
+  const ownedBlogs = filterOwned(safeBlogs);
+  const filteredBlogs = ownedBlogs.filter(
+    (blog) => getLocalizedText(blog.title, locale).trim().length > 0,
+  );
+
+  // When client-filtering ownership, paginate locally from filtered set
+  const clientScoped = needsOwnershipScope && ownedBlogs.length !== safeBlogs.length;
+  const displayBlogs = clientScoped
+    ? filteredBlogs.slice((page - 1) * pageSize, page * pageSize)
+    : filteredBlogs;
+  const total = clientScoped ? filteredBlogs.length : Number(data?.data?.total ?? filteredBlogs.length);
   const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
 
   useEffect(() => {
     setPage((p) => (p > totalPages ? totalPages : p));
   }, [totalPages]);
-
-  const blogs = extractItems(data);
-  const safeBlogs = Array.isArray(blogs) ? blogs : [];
-  const filteredBlogs = safeBlogs.filter(
-    (blog) => getLocalizedText(blog.title, locale).trim().length > 0,
-  );
 
   const handleLocaleChange = (_, value) => {
     if (value) setLocale(value);
@@ -143,14 +163,32 @@ function BlogsList() {
 
   const handleDeleteConfirm = async () => {
     if (!deleteItem) return;
-    await deleteBlog(deleteItem.id || deleteItem._id);
+    if (!canManage(deleteItem)) {
+      enqueueSnackbar('You can only delete blogs you created', { variant: 'warning' });
+      setDeleteItem(null);
+      return;
+    }
+    try {
+      await deleteBlog(deleteItem.id || deleteItem._id).unwrap();
+      enqueueSnackbar('Blog deleted successfully', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message || 'Failed to delete blog', { variant: 'error' });
+    }
     setDeleteItem(null);
   };
 
   const handleTogglePublish = async (blog) => {
+    if (!canManage(blog)) {
+      enqueueSnackbar('You can only update blogs you created', { variant: 'warning' });
+      return;
+    }
     const id = blog.id || blog._id;
     const newStatus = blog.status === 'published' ? 'draft' : 'published';
-    await updateBlog({ id, data: { status: newStatus } });
+    try {
+      await updateBlog({ id, data: { status: newStatus } }).unwrap();
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message || 'Failed to update blog', { variant: 'error' });
+    }
   };
 
   return (
@@ -274,13 +312,14 @@ function BlogsList() {
           <div className="flex items-center justify-center py-10">
             <CircularProgress size={24} />
           </div>
-        ) : filteredBlogs.length === 0 ? (
+        ) : displayBlogs.length === 0 ? (
           <div className="p-6 text-gray-600">No blogs found.</div>
         ) : (
           <div className="space-y-3">
-            {filteredBlogs.map((blog) => {
+            {displayBlogs.map((blog) => {
               const id = blog.id || blog._id;
               const isPublished = blog.status === 'published';
+              const manageable = canManage(blog);
               return (
                 <div
                   key={id}
@@ -365,40 +404,48 @@ function BlogsList() {
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                   >
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => navigate(`/blogs/${id}/edit`)}
-                      sx={{ minWidth: 80 }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      disabled={isUpdating}
-                      onClick={() => handleTogglePublish(blog)}
-                      sx={{
-                        minWidth: 80,
-                        color: isPublished ? '#616161' : 'var(--color-primary)',
-                        borderColor: isPublished ? '#9E9E9E' : 'var(--color-primary)',
-                        '&:hover': {
-                          borderColor: isPublished ? '#616161' : 'var(--color-primary-dark)',
-                        },
-                      }}
-                    >
-                      {isPublished ? 'Unpublish' : 'Publish'}
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      variant="outlined"
-                      disabled={isDeleting}
-                      onClick={() => setDeleteItem(blog)}
-                      sx={{ minWidth: 80 }}
-                    >
-                      Delete
-                    </Button>
+                    {manageable ? (
+                      <>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => navigate(`/blogs/${id}/edit`)}
+                          sx={{ minWidth: 80 }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={isUpdating}
+                          onClick={() => handleTogglePublish(blog)}
+                          sx={{
+                            minWidth: 80,
+                            color: isPublished ? '#616161' : 'var(--color-primary)',
+                            borderColor: isPublished ? '#9E9E9E' : 'var(--color-primary)',
+                            '&:hover': {
+                              borderColor: isPublished ? '#616161' : 'var(--color-primary-dark)',
+                            },
+                          }}
+                        >
+                          {isPublished ? 'Unpublish' : 'Publish'}
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          disabled={isDeleting}
+                          onClick={() => setDeleteItem(blog)}
+                          sx={{ minWidth: 80 }}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    ) : (
+                      <Typography variant="caption" sx={{ color: 'text.secondary', maxWidth: 96 }}>
+                        View only
+                      </Typography>
+                    )}
                   </div>
                 </div>
               );

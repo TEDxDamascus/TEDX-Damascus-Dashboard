@@ -108,6 +108,8 @@ const blogsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
         language,
         sort,
         order,
+        created_by,
+        author_user_id,
       } = {}) => ({
         url: '/blogs',
         method: 'get',
@@ -120,6 +122,8 @@ const blogsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
           ...(language ? { language } : {}),
           ...(sort ? { sort } : {}),
           ...(order ? { order } : {}),
+          ...(created_by ? { created_by } : {}),
+          ...(author_user_id ? { author_user_id } : {}),
         },
       }),
       transformResponse: normalizeBlogListResponse,

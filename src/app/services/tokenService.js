@@ -46,9 +46,10 @@ export const tokenService = {
     return {
       id: payload.sub,
       email: payload.email,
+      name: payload.name ?? '',
       role: payload.role,
       permissions: payload.permissions ?? [],
-      is_active: true,
+      isActive: payload.is_active !== false && payload.isActive !== false,
     };
   },
 };

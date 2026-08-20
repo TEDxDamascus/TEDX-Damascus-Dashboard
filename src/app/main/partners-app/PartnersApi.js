@@ -6,10 +6,16 @@ export const addTagTypes = ['Partners', 'Partner'];
 const partnersApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getPartners: builder.query({
-      query: ({ page = 1, pageSize = 10, search } = {}) => ({
+      query: ({ page = 1, pageSize = 10, search, created_by, author_user_id } = {}) => ({
         url: '/partners',
         method: 'GET',
-        params: { limit: pageSize, page, search },
+        params: {
+          limit: pageSize,
+          page,
+          search,
+          ...(created_by ? { created_by } : {}),
+          ...(author_user_id ? { author_user_id } : {}),
+        },
       }),
       transformResponse: (response) => {
         const rawItems = response?.data ?? [];
