@@ -6,7 +6,14 @@ export const addTagTypes = ['Forms', 'Form', 'FormSubmissions', 'FormSubmission'
 const formsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getForms: builder.query({
-      query: () => ({ url: '/forms', method: 'GET' }),
+      query: ({ created_by, author_user_id } = {}) => ({
+        url: '/forms',
+        method: 'GET',
+        params: {
+          ...(created_by ? { created_by } : {}),
+          ...(author_user_id ? { author_user_id } : {}),
+        },
+      }),
       transformResponse: (response) => {
         const items = (response?.data ?? []).map((f) => ({ ...f, id: f._id || f.id }));
         return { data: items };

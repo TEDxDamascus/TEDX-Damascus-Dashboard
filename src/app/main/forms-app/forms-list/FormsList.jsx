@@ -2,18 +2,21 @@ import { useMemo, useState } from 'react';
 import { useGetFormsQuery } from '../FormsApi';
 import FormsListHeader from './FormsListHeader';
 import FormsListTable from './FormsListTable';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const PAGE_SIZE = 10;
 
 function FormsList() {
-  const { data, isLoading } = useGetFormsQuery(undefined, { refetchOnMountOrArgChange: true });
+  const { withOwnerParams, filterOwned } = useOwnershipScope();
+  const queryArgs = useMemo(() => withOwnerParams({}), [withOwnerParams]);
+  const { data, isLoading } = useGetFormsQuery(queryArgs, { refetchOnMountOrArgChange: true });
   const [page, _setPage] = useState(1);
   const [search, _setSearch] = useState('');
 
-  const allForms = useMemo(
-    () => (Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []),
-    [data],
-  );
+  const allForms = useMemo(() => {
+    const items = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    return filterOwned(items);
+  }, [data, filterOwned]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return allForms;

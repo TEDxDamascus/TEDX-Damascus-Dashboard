@@ -5,10 +5,16 @@ export const addTagTypes = ['WallQuestions', 'WallQuestion', 'WallAnswers', 'Wal
 const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getWallQuestions: builder.query({
-      query: ({ page = 1, limit = 20, status } = {}) => ({
+      query: ({ page = 1, limit = 20, status, created_by, author_user_id } = {}) => ({
         url: '/wall-cards/questions',
         method: 'GET',
-        params: { page, limit, ...(status ? { status } : {}) },
+        params: {
+          page,
+          limit,
+          ...(status ? { status } : {}),
+          ...(created_by ? { created_by } : {}),
+          ...(author_user_id ? { author_user_id } : {}),
+        },
       }),
       transformResponse: (response) => {
         const raw = response?.data ?? response ?? {};
@@ -35,6 +41,10 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
             replacedByQuestionId: q.replacedByQuestionId ?? null,
             createdAt: q.createdAt,
             updatedAt: q.updatedAt,
+            created_by: q.created_by,
+            createdBy: q.createdBy,
+            user_id: q.user_id,
+            author_user_id: q.author_user_id,
           })),
           total: raw?.total ?? items.length,
           page: raw?.page ?? 1,

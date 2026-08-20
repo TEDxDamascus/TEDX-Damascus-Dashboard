@@ -17,6 +17,7 @@ import {
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import StatusBadge from '../../../shared-components/status-badge';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'forms';
 
@@ -73,6 +74,7 @@ function isPublished(row) {
 function FormsListTable({ data, totalCount, isLoading }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { canManage } = useOwnershipScope();
 
   const [deleteForm, { isLoading: isDeleting }] = useDeleteFormMutation();
   const [publishForm, { isLoading: isPublishing }] = usePublishFormMutation();
@@ -82,6 +84,11 @@ function FormsListTable({ data, totalCount, isLoading }) {
   const [publishItem, setPublishItem] = useState(null); // row to publish/unpublish
 
   const handleDeleteConfirm = async () => {
+    if (!canManage(deleteItem)) {
+      enqueueSnackbar('You can only delete records you created', { variant: 'warning' });
+      setDeleteItem(null);
+      return;
+    }
     try {
       await deleteForm(deleteItem.id).unwrap();
       enqueueSnackbar('Form deleted successfully', { variant: 'success' });
@@ -92,6 +99,11 @@ function FormsListTable({ data, totalCount, isLoading }) {
   };
 
   const handlePublishConfirm = async () => {
+    if (!canManage(publishItem)) {
+      enqueueSnackbar('You can only manage records you created', { variant: 'warning' });
+      setPublishItem(null);
+      return;
+    }
     const publish = !isPublished(publishItem);
     try {
       if (publish) {
@@ -107,38 +119,47 @@ function FormsListTable({ data, totalCount, isLoading }) {
     }
   };
 
-  const rowActions = (row) => [
-    {
-      icon: <Visibility style={{ fontSize: 18 }} />,
-      label: 'View',
-      onClick: () => navigate(`/forms/${row.id}`),
-    },
-    {
-      icon: <Edit style={{ fontSize: 18 }} />,
-      label: 'Edit',
-      onClick: () => navigate(`/forms/${row.id}`),
-    },
-    {
+  const rowActions = (row) => {
+    const actions = [
+      {
+        icon: <Visibility style={{ fontSize: 18 }} />,
+        label: 'View',
+        onClick: () => navigate(`/forms/${row.id}`),
+      },
+    ];
+    if (canManage(row)) {
+      actions.push({
+        icon: <Edit style={{ fontSize: 18 }} />,
+        label: 'Edit',
+        onClick: () => navigate(`/forms/${row.id}`),
+      });
+    }
+    actions.push({
       icon: <InboxOutlined style={{ fontSize: 18 }} />,
       label: 'Submissions',
       onClick: () => navigate(`/forms/${row.id}/submissions`),
-    },
-    {
-      icon: isPublished(row) ? (
-        <UnpublishedOutlined style={{ fontSize: 18 }} />
-      ) : (
-        <Publish style={{ fontSize: 18 }} />
-      ),
-      label: isPublished(row) ? 'Unpublish' : 'Publish',
-      onClick: () => setPublishItem(row),
-    },
-    {
-      icon: <DeleteOutline style={{ fontSize: 18 }} />,
-      label: 'Delete',
-      danger: true,
-      onClick: () => setDeleteItem(row),
-    },
-  ];
+    });
+    if (canManage(row)) {
+      actions.push(
+        {
+          icon: isPublished(row) ? (
+            <UnpublishedOutlined style={{ fontSize: 18 }} />
+          ) : (
+            <Publish style={{ fontSize: 18 }} />
+          ),
+          label: isPublished(row) ? 'Unpublish' : 'Publish',
+          onClick: () => setPublishItem(row),
+        },
+        {
+          icon: <DeleteOutline style={{ fontSize: 18 }} />,
+          label: 'Delete',
+          danger: true,
+          onClick: () => setDeleteItem(row),
+        },
+      );
+    }
+    return actions;
+  };
 
   const formName = (row) => row?.name?.en || row?.name?.ar || 'this form';
 

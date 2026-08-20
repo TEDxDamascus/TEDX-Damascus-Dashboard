@@ -11,6 +11,7 @@ import { useDeleteOrganizerMutation } from '../organizersApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import { toDisplayImageUrl } from '../../../shared-components/image-picker';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'organizers';
 
@@ -59,12 +60,18 @@ function OrganizersListTable({ data, totalCount, isLoading }) {
   const navigate = useNavigate();
 
   const { enqueueSnackbar } = useSnackbar();
+  const { canManage } = useOwnershipScope();
 
   const [deleteOrganizer, { isLoading: isDeleting }] = useDeleteOrganizerMutation();
 
   const [confirmItem, setConfirmItem] = useState(null);
 
   const handleDeleteConfirm = async () => {
+    if (!canManage(confirmItem)) {
+      enqueueSnackbar('You can only delete records you created', { variant: 'warning' });
+      setConfirmItem(null);
+      return;
+    }
     try {
       await deleteOrganizer(confirmItem._id).unwrap();
 
@@ -80,26 +87,31 @@ function OrganizersListTable({ data, totalCount, isLoading }) {
     }
   };
 
-  const rowActions = (row) => [
-    {
-      icon: <Visibility style={{ fontSize: 18 }} />,
-      label: 'View',
-      onClick: () => navigate(`/organizers/${row._id}`),
-    },
-
-    {
-      icon: <Edit style={{ fontSize: 18 }} />,
-      label: 'Edit',
-      onClick: () => navigate(`/organizers/${row.id}`),
-    },
-
-    {
-      icon: <DeleteOutline style={{ fontSize: 18 }} />,
-      label: 'Delete',
-      danger: true,
-      onClick: () => setConfirmItem(row),
-    },
-  ];
+  const rowActions = (row) => {
+    const actions = [
+      {
+        icon: <Visibility style={{ fontSize: 18 }} />,
+        label: 'View',
+        onClick: () => navigate(`/organizers/${row._id}`),
+      },
+    ];
+    if (canManage(row)) {
+      actions.push(
+        {
+          icon: <Edit style={{ fontSize: 18 }} />,
+          label: 'Edit',
+          onClick: () => navigate(`/organizers/${row.id}`),
+        },
+        {
+          icon: <DeleteOutline style={{ fontSize: 18 }} />,
+          label: 'Delete',
+          danger: true,
+          onClick: () => setConfirmItem(row),
+        },
+      );
+    }
+    return actions;
+  };
 
   return (
     <>

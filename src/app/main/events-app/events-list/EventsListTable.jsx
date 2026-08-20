@@ -7,6 +7,7 @@ import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import StatusBadge from '../../../shared-components/status-badge';
 import { toDisplayImageUrl } from '../../../shared-components/image-picker';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'events';
 
@@ -53,10 +54,16 @@ const COLUMNS = [
 function EventsListTable({ data, totalCount, isLoading }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { canManage } = useOwnershipScope();
   const [deleteEvent] = useDeleteEventMutation();
   const [confirmItem, setConfirmItem] = useState(null);
 
   const handleDelete = async () => {
+    if (!canManage(confirmItem)) {
+      enqueueSnackbar('You can only delete records you created', { variant: 'warning' });
+      setConfirmItem(null);
+      return;
+    }
     try {
       await deleteEvent(confirmItem.id).unwrap();
       enqueueSnackbar('Deleted successfully', { variant: 'success' });
@@ -66,21 +73,28 @@ function EventsListTable({ data, totalCount, isLoading }) {
     }
   };
 
-  const actions = (row) => [
-    {
-      icon: <Visibility />,
-      onClick: () => navigate(`/events/${row.id}`),
-    },
-    {
-      icon: <Edit />,
-      onClick: () => navigate(`/events/${row.id}?mode=edit`),
-    },
-    {
-      icon: <DeleteOutline />,
-      danger: true,
-      onClick: () => setConfirmItem(row),
-    },
-  ];
+  const actions = (row) => {
+    const rowActions = [
+      {
+        icon: <Visibility />,
+        onClick: () => navigate(`/events/${row.id}`),
+      },
+    ];
+    if (canManage(row)) {
+      rowActions.push(
+        {
+          icon: <Edit />,
+          onClick: () => navigate(`/events/${row.id}?mode=edit`),
+        },
+        {
+          icon: <DeleteOutline />,
+          danger: true,
+          onClick: () => setConfirmItem(row),
+        },
+      );
+    }
+    return rowActions;
+  };
 
   return (
     <>

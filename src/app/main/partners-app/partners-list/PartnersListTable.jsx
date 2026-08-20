@@ -9,6 +9,7 @@ import { useDeletePartnerMutation } from '../PartnersApi';
 import CustomTable from '../../../shared-components/custom-table';
 import ConfirmModal from '../../../shared-components/confirm-modal';
 import { toDisplayImageUrl } from '../../../shared-components/image-picker';
+import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'partners';
 
@@ -87,6 +88,7 @@ function PartnersListTable({ data, totalCount, isLoading }) {
   const navigate = useNavigate();
 
   const { enqueueSnackbar } = useSnackbar();
+  const { canManage } = useOwnershipScope();
 
   const [deletePartner, { isLoading: isDeleting }] = useDeletePartnerMutation();
 
@@ -94,6 +96,12 @@ function PartnersListTable({ data, totalCount, isLoading }) {
 
   const handleDeleteConfirm = async () => {
     if (!confirmItem) return;
+
+    if (!canManage(confirmItem)) {
+      enqueueSnackbar('You can only delete records you created', { variant: 'warning' });
+      setConfirmItem(null);
+      return;
+    }
 
     const id = confirmItem.id || confirmItem._id;
 
@@ -122,33 +130,38 @@ function PartnersListTable({ data, totalCount, isLoading }) {
     }
   };
 
-  const rowActions = (row) => [
-    {
-      icon: <Visibility style={{ fontSize: 18 }} />,
+  const rowActions = (row) => {
+    const actions = [
+      {
+        icon: <Visibility style={{ fontSize: 18 }} />,
 
-      label: 'View',
+        label: 'View',
 
-      onClick: () => navigate(`/partners/${row.id || row._id}`),
-    },
+        onClick: () => navigate(`/partners/${row.id || row._id}`),
+      },
+    ];
+    if (canManage(row)) {
+      actions.push(
+        {
+          icon: <Edit style={{ fontSize: 18 }} />,
 
-    {
-      icon: <Edit style={{ fontSize: 18 }} />,
+          label: 'Edit',
 
-      label: 'Edit',
+          onClick: () => navigate(`/partners/${row.id || row._id}`),
+        },
+        {
+          icon: <DeleteOutline style={{ fontSize: 18 }} />,
 
-      onClick: () => navigate(`/partners/${row.id || row._id}`),
-    },
+          label: 'Delete',
 
-    {
-      icon: <DeleteOutline style={{ fontSize: 18 }} />,
+          danger: true,
 
-      label: 'Delete',
-
-      danger: true,
-
-      onClick: () => setConfirmItem(row),
-    },
-  ];
+          onClick: () => setConfirmItem(row),
+        },
+      );
+    }
+    return actions;
+  };
 
   return (
     <>

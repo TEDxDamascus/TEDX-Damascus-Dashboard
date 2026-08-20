@@ -1,7 +1,9 @@
-import { Controller } from 'react-hook-form';
+import { useMemo } from 'react';
+import { Controller, useWatch } from 'react-hook-form';
 import {
   TextField,
   FormControl,
+  FormControlLabel,
   InputLabel,
   Select,
   MenuItem,
@@ -10,25 +12,15 @@ import {
   Typography,
   Checkbox,
   Paper,
+  Switch,
 } from '@mui/material';
-import { PERMISSION_RESOURCES, PERMISSION_ACTIONS } from '../models/UserModel';
+import { parsePermissionsCatalog } from '../../models/UserModel';
 
 const ACTION_LABELS = { create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
-const RESOURCE_LABELS = {
-  blogs: 'Blogs',
-  users: 'Users',
-  speakers: 'Speakers',
-  forms: 'Forms',
-  events: 'Events',
-  files: 'Files',
-  images: 'Images',
-  volunteer: 'Volunteer',
-  partner: 'Partner',
-  'general-settings': 'General Settings',
-  wall: 'Wall',
-};
 
-function PermissionsTable({ control, isDisabled }) {
+function PermissionsTable({ control, isDisabled, catalog }) {
+  const { resources, actions } = useMemo(() => parsePermissionsCatalog(catalog), [catalog]);
+
   return (
     <Box>
       <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: 'text.secondary' }}>
@@ -52,7 +44,7 @@ function PermissionsTable({ control, isDisabled }) {
                 >
                   Resource
                 </th>
-                {PERMISSION_ACTIONS.map((action) => (
+                {actions.map((action) => (
                   <th
                     key={action}
                     style={{
@@ -64,13 +56,13 @@ function PermissionsTable({ control, isDisabled }) {
                       borderBottom: '1px solid #e0e0e0',
                     }}
                   >
-                    {ACTION_LABELS[action]}
+                    {ACTION_LABELS[action] || action}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {PERMISSION_RESOURCES.map((resource, ri) => (
+              {resources.map((resource, ri) => (
                 <tr key={resource} style={{ backgroundColor: ri % 2 === 0 ? '#fff' : '#fafafa' }}>
                   <td
                     style={{
@@ -79,11 +71,12 @@ function PermissionsTable({ control, isDisabled }) {
                       fontWeight: 500,
                       color: '#333',
                       borderBottom: '1px solid #f0f0f0',
+                      textTransform: 'capitalize',
                     }}
                   >
-                    {RESOURCE_LABELS[resource]}
+                    {resource.replace(/-/g, ' ')}
                   </td>
-                  {PERMISSION_ACTIONS.map((action) => (
+                  {actions.map((action) => (
                     <td
                       key={action}
                       style={{
@@ -95,6 +88,7 @@ function PermissionsTable({ control, isDisabled }) {
                       <Controller
                         name={`permissions.${resource}.${action}`}
                         control={control}
+                        defaultValue={false}
                         render={({ field }) => (
                           <Checkbox
                             checked={!!field.value}
@@ -120,7 +114,19 @@ function PermissionsTable({ control, isDisabled }) {
   );
 }
 
-function BasicInfoTab({ control, errors, isDisabled, isOwnSuperadmin, isNew }) {
+function BasicInfoTab({
+  control,
+  errors,
+  isDisabled,
+  isOwnAccount,
+  isNew,
+  catalog,
+  lockRole = false,
+  lockActiveStatus = false,
+  showPermissions = true,
+}) {
+  const role = useWatch({ control, name: 'role' });
+
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
@@ -163,21 +169,47 @@ function BasicInfoTab({ control, errors, isDisabled, isOwnSuperadmin, isNew }) {
 
         <Grid item xs={12} md={6}>
           <Controller
-            name="status"
+            name="role"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth required error={!!errors.status} disabled={isOwnSuperadmin}>
-                <InputLabel>Status</InputLabel>
-                <Select {...field} label="Status">
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="disabled">Disabled</MenuItem>
+              <FormControl fullWidth required error={!!errors.role} disabled={isDisabled || lockRole}>
+                <InputLabel>Role</InputLabel>
+                <Select {...field} label="Role">
+                  <MenuItem value="user">User</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
                 </Select>
               </FormControl>
             )}
           />
         </Grid>
 
-        {isOwnSuperadmin && (
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="isActive"
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={!!field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    disabled={isDisabled || lockActiveStatus}
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': { color: 'var(--color-primary)' },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: 'var(--color-primary)',
+                      },
+                    }}
+                  />
+                }
+                label={field.value ? 'Active' : 'Inactive'}
+                sx={{ mt: 1 }}
+              />
+            )}
+          />
+        </Grid>
+
+        {(isOwnAccount || lockActiveStatus || lockRole) && !isNew && (
           <Grid item xs={12}>
             <Box
               sx={{
@@ -188,13 +220,14 @@ function BasicInfoTab({ control, errors, isDisabled, isOwnSuperadmin, isNew }) {
               }}
             >
               <Typography variant="body2" sx={{ color: '#E65100' }}>
-                As a Super Admin you cannot change your own status.
+                {isOwnAccount
+                  ? 'You cannot change your own active status here.'
+                  : 'Role, permissions, and active status can only be changed by a superadmin.'}
               </Typography>
             </Box>
           </Grid>
         )}
 
-        {/* Password section */}
         <Grid item xs={12}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 0 }}>
             {isNew ? 'Set Password' : 'Change Password'}
@@ -246,9 +279,11 @@ function BasicInfoTab({ control, errors, isDisabled, isOwnSuperadmin, isNew }) {
           />
         </Grid>
 
-        <Grid item xs={12}>
-          <PermissionsTable control={control} isDisabled={isDisabled} />
-        </Grid>
+        {showPermissions && role === 'admin' && (
+          <Grid item xs={12}>
+            <PermissionsTable control={control} isDisabled={isDisabled} catalog={catalog} />
+          </Grid>
+        )}
       </Grid>
     </Box>
   );

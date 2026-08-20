@@ -12,10 +12,16 @@ const eventsApi = apiService.injectEndpoints({
   endpoints: (builder) => ({
     // GET ALL EVENTS
     getEvents: builder.query({
-      query: ({ page = 1, pageSize = 10, search } = {}) => ({
+      query: ({ page = 1, pageSize = 10, search, created_by, author_user_id } = {}) => ({
         url: '/events',
         method: 'GET',
-        params: { page, pageSize, search },
+        params: {
+          page,
+          pageSize,
+          search,
+          ...(created_by ? { created_by } : {}),
+          ...(author_user_id ? { author_user_id } : {}),
+        },
       }),
 
       transformResponse: (response) => {
@@ -31,6 +37,10 @@ const eventsApi = apiService.injectEndpoints({
           status: event.status,
           speakers: event.speakers ?? [],
           gallery: event.gallery ?? [],
+          created_by: event.created_by,
+          createdBy: event.createdBy,
+          user_id: event.user_id,
+          author_user_id: event.author_user_id,
         }));
 
         return {
