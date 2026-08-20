@@ -18,7 +18,7 @@ function BasicInfoTab({ control, errors }) {
                 label="Organizer Name"
                 required
                 error={!!errors.name}
-                helperText={errors.name?.message}
+                helperText={errors.name?.en?.message || errors.name?.ar?.message}
               />
             )}
           />
@@ -49,6 +49,7 @@ function BasicInfoTab({ control, errors }) {
               <TextField
                 {...field}
                 label="Role"
+                required
                 fullWidth
                 error={!!errors.role}
                 helperText={errors.role?.message}
@@ -66,9 +67,10 @@ function BasicInfoTab({ control, errors }) {
                 {...field}
                 type={localeInputTypes.textFieldMultiple}
                 label="Bio"
+                required
                 minRows={4}
                 error={!!errors.bio}
-                helperText={errors.bio?.message}
+                helperText={errors.bio?.en?.message || errors.bio?.ar?.message}
               />
             )}
           />

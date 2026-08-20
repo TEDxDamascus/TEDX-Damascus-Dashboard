@@ -10,6 +10,7 @@ const OrganizerModel = () => ({
   facebook_url: '',
   website_url: '',
   gallery: [],
+  social_links: [],
 });
 
 export default OrganizerModel;

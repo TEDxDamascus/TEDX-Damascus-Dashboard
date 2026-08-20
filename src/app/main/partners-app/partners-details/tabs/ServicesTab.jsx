@@ -1,7 +1,11 @@
 import { useFieldArray, Controller } from 'react-hook-form';
-import { TextField, Grid, Box, Button, IconButton, Typography, Paper } from '@mui/material';
+import { Grid, Box, Button, IconButton, Typography, Paper } from '@mui/material';
 import { DeleteOutline, Add } from '@mui/icons-material';
-import { LocaleInput, localeInputTypes, defaultLocaleValue } from '../../../../shared-components/locale-input';
+import {
+  LocaleInput,
+  localeInputTypes,
+  defaultLocaleValue,
+} from '../../../../shared-components/locale-input';
 
 function ServicesTab({ control, register, errors }) {
   const { fields, append, remove } = useFieldArray({
@@ -12,13 +16,13 @@ function ServicesTab({ control, register, errors }) {
   return (
     <Box sx={{ p: 3 }}>
       <Box className="mb-4 flex items-center justify-between">
-        <Typography variant="h6" className="text-gray-700 font-medium">
+        <Typography variant="h6" className="font-medium text-gray-700">
           Provided Services ({fields.length})
         </Typography>
         <Button
           variant="outlined"
           startIcon={<Add />}
-          onClick={() => append({ title: '', description: defaultLocaleValue() })}
+          onClick={() => append({ title: defaultLocaleValue(), description: defaultLocaleValue() })}
           sx={{
             borderColor: 'var(--color-primary)',
             color: 'var(--color-primary)',
@@ -36,8 +40,8 @@ function ServicesTab({ control, register, errors }) {
       )}
 
       {fields.length === 0 ? (
-        <Box className="p-8 text-center border-2 border-dashed border-red-200 rounded-lg text-gray-400">
-          At least one service is required. Click "Add Service" to add one.
+        <Box className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center text-gray-400">
+          No services added . Click "Add Service" to add a service (optional).
         </Box>
       ) : (
         <Grid container spacing={3}>
@@ -52,12 +56,21 @@ function ServicesTab({ control, register, errors }) {
 
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
-                    <TextField
-                      {...register(`services.${index}.title`)}
-                      label={`Service #${index + 1} Title`}
-                      fullWidth
-                      error={!!errors.services?.[index]?.title}
-                      helperText={errors.services?.[index]?.title?.message}
+                    <Controller
+                      name={`services.${index}.title`}
+                      control={control}
+                      render={({ field: inputField }) => (
+                        <LocaleInput
+                          {...inputField}
+                          type={localeInputTypes.textField}
+                          label={`Service #${index + 1} Title`}
+                          error={!!errors.services?.[index]?.title}
+                          helperText={
+                            errors.services?.[index]?.title?.en?.message ||
+                            errors.services?.[index]?.title?.ar?.message
+                          }
+                        />
+                      )}
                     />
                   </Grid>
 
