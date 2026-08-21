@@ -3,10 +3,14 @@ const OBJECT_ID_RE = /^[a-f0-9]{24}$/i;
 
 /**
  * Resolve any image field shape (plain URL string, `{id,url}` object, empty) to a safe
- * `<img>` src. Absolute `http://` backend URLs are rewritten to go through the `/api`
+ * `<img>` src. Absolute `http://` media URLs are rewritten to go through the `/media`
  * proxy (see vite.config.js / vercel.json) so they load over the page's own origin —
  * otherwise a `http://` image embedded in an `https://` deploy (e.g. Vercel) is blocked
  * as mixed content and silently fails to render.
+ *
+ * Uploaded media is served by a dedicated object-storage host on its own port, separate
+ * from the API host that `/api` proxies to — routing it through `/api` hits the wrong
+ * backend and 404s, so it needs its own `/media` proxy target instead.
  */
 export function toDisplayImageUrl(raw) {
   let url = '';
@@ -19,7 +23,7 @@ export function toDisplayImageUrl(raw) {
   if (/^http:\/\//i.test(url)) {
     try {
       const { pathname, search, hash } = new URL(url);
-      return `/api${pathname}${search}${hash}`;
+      return `/media${pathname}${search}${hash}`;
     } catch {
       return url;
     }
