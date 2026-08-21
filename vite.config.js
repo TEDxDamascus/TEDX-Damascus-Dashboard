@@ -5,6 +5,7 @@ import jsconfigPaths from 'vite-jsconfig-paths';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
   const apiTarget = env.VITE_API_TARGET;
+  const mediaTarget = env.VITE_MEDIA_TARGET;
 
   return {
     plugins: [
@@ -19,6 +20,14 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
+        },
+        // Uploaded media (images) is served by a separate object-storage host
+        // (different port than the API), so it needs its own proxy entry —
+        // see mediaRefUtils.js `toDisplayImageUrl`.
+        '/media': {
+          target: mediaTarget,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/media/, '')
         }
       }
     },
