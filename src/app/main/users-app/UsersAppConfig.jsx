@@ -2,6 +2,7 @@ import { lazy } from 'react';
 
 const UsersList = lazy(() => import('./users-list/UsersList'));
 const User = lazy(() => import('./user-detail/User'));
+const MyProfile = lazy(() => import('./profile/MyProfile'));
 
 const UsersAppConfig = {
   routes: [
@@ -17,6 +18,10 @@ const UsersAppConfig = {
           element: <User />,
         },
       ],
+    },
+    {
+      path: '/profile',
+      element: <MyProfile />,
     },
   ],
 };

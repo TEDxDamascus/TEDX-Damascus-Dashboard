@@ -16,7 +16,12 @@ const PartnerModel = () => ({
     email: '',
   },
 
-  services: [],
+  services: [
+    {
+      title: defaultLocaleValue(),
+      description: defaultLocaleValue(),
+    },
+  ],
 });
 
 export default PartnerModel;

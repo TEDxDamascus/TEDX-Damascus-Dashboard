@@ -17,10 +17,16 @@ export async function searchTeamOptions(query) {
 const teamApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getTeam: builder.query({
-      query: ({ page = 1, pageSize = 10, search } = {}) => ({
+      query: ({ page = 1, pageSize = 10, search, created_by, author_user_id } = {}) => ({
         url: '/team',
         method: 'GET',
-        params: { limit: pageSize, page, search },
+        params: {
+          limit: pageSize,
+          page,
+          search,
+          ...(created_by ? { created_by } : {}),
+          ...(author_user_id ? { author_user_id } : {}),
+        },
       }),
       transformResponse: (response) => {
         const rawItems = response?.data ?? [];

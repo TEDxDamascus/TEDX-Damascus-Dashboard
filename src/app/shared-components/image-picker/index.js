@@ -7,4 +7,5 @@ export {
   mediaFormValueToPreviewSrc,
   mediaFieldToDisplayUrl,
   mediaSelectionMatches,
+  toDisplayImageUrl,
 } from './mediaRefUtils';

@@ -9,8 +9,9 @@ import {
   MenuItem,
   Avatar,
 } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Logout, Person } from '@mui/icons-material';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import { selectUser } from '../../auth/store/userSlice';
 import { useAuth } from '../../auth/AuthContext';
@@ -18,6 +19,7 @@ import { useAuth } from '../../auth/AuthContext';
 function Header() {
   const user = useSelector(selectUser);
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleMenu = (event) => {
@@ -26,6 +28,11 @@ function Header() {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleProfile = () => {
+    handleClose();
+    navigate('/profile');
   };
 
   const handleLogout = () => {
@@ -57,7 +64,7 @@ function Header() {
           </IconButton>
           <IconButton size="large" onClick={handleMenu} color="inherit">
             <Avatar sx={{ width: 32, height: 32, backgroundColor: '#EB0028' }}>
-              {user?.name?.charAt(0) || 'A'}
+              {(user?.name || user?.email || 'A').charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
           <Menu
@@ -73,6 +80,10 @@ function Header() {
               horizontal: 'right',
             }}
           >
+            <MenuItem onClick={handleProfile}>
+              <Person fontSize="small" sx={{ mr: 1 }} />
+              My Profile
+            </MenuItem>
             <MenuItem onClick={handleLogout}>
               <Logout fontSize="small" sx={{ mr: 1 }} />
               <FormattedMessage id="common.logout" defaultMessage="Logout" />

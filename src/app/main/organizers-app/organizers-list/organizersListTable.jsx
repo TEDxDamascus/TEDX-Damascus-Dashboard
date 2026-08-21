@@ -20,13 +20,22 @@ const COLUMNS = [
     renderCell: (value, row) => {
       const nameText = typeof row.name === 'string' ? row.name : row.name?.en || row.name?.ar || '';
 
+      const imageUrl = typeof value === 'object' ? value?.url : value;
+
       return (
         <div className="flex items-center">
-          {value ? (
-            <img src={value} alt={nameText} className="h-10 w-10 rounded-full object-cover" />
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={nameText}
+              className="h-10 w-10 rounded-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tedx-red text-sm font-semibold text-white">
-              {nameText.charAt(0) || '?'}
+              {nameText.charAt(0)?.toUpperCase() || '?'}
             </div>
           )}
         </div>

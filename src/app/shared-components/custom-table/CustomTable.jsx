@@ -222,7 +222,13 @@ export default function CustomTable({
   const [internalSelectedIds, setInternalSelectedIds] = useState([]);
   const selectedIds = externalSelectedIds ?? internalSelectedIds;
   const setSelectedIds = externalOnSelectChange
-    ? (ids) => externalOnSelectChange(ids)
+    ? (idsOrFn) => {
+        if (typeof idsOrFn === 'function') {
+          externalOnSelectChange(idsOrFn);
+        } else {
+          externalOnSelectChange(idsOrFn);
+        }
+      }
     : setInternalSelectedIds;
   const [localSearch, setLocalSearch] = useState(params.search);
   const debounceRef = useRef(null);

@@ -4,7 +4,7 @@ import { TextField, Grid, Box, Typography, IconButton, Button } from '@mui/mater
 import { Add, DeleteOutline } from '@mui/icons-material';
 import { ImagePickerDialog } from '../../../../shared-components/image-picker';
 
-function GalleryPicker({ control, name }) {
+function GalleryPicker({ control, name, error, helperText }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { field } = useController({ control, name });
   const images = Array.isArray(field.value) ? field.value : [];
@@ -23,8 +23,8 @@ function GalleryPicker({ control, name }) {
 
   return (
     <Box>
-      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: 'text.secondary' }}>
-        Gallery
+      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: error ? 'error.main' : 'text.secondary' }}>
+        Gallery *
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 1.5 }}>
         {images.map((url, i) => (
@@ -69,8 +69,8 @@ function GalleryPicker({ control, name }) {
           sx={{
             height: 90,
             width: 120,
-            border: '1px dashed #bdbdbd',
-            color: 'text.secondary',
+            border: error ? '1px dashed #d32f2f' : '1px dashed #bdbdbd',
+            color: error ? 'error.main' : 'text.secondary',
             flexDirection: 'column',
             gap: 0.5,
             '&:hover': { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' },
@@ -79,6 +79,11 @@ function GalleryPicker({ control, name }) {
           Add
         </Button>
       </Box>
+      {error && helperText && (
+        <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mt: 0.5 }}>
+          {helperText}
+        </Typography>
+      )}
       <ImagePickerDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -162,7 +167,12 @@ function MediaLinksTab({ control, errors }) {
         </Grid>
 
         <Grid item xs={12}>
-          <GalleryPicker control={control} name="gallery" />
+          <GalleryPicker
+            control={control}
+            name="gallery"
+            error={!!errors.gallery}
+            helperText={errors.gallery?.message || errors.gallery?.root?.message}
+          />
         </Grid>
       </Grid>
     </Box>

@@ -1,38 +1,41 @@
 export const FIXED_TIERS = [
   {
-    value: "diamond",
-    label: "Diamond",
-    size: null, // ✅ Diamond ما إلها size — القياس محدد بتصميم الموقع نفسه (full layout)
-  },
-  {
-    value: "gold",
-    label: "Gold",
+    value: 'platinum',
+    label: 'Diamond',
     size: null,
   },
   {
-    value: "silver",
-    label: "Silver",
+    value: 'gold',
+    label: 'Gold',
+    size: null,
+  },
+  {
+    value: 'silver',
+    label: 'Silver',
     size: null,
   },
 ];
 
 export const CARD_SIZES = [
-  {
-    value: "large",
-    label: "Large",
-  },
-  {
-    value: "medium",
-    label: "Medium",
-  },
-  {
-    value: "small",
-    label: "Small",
-  },
+  { value: 'large', label: 'Large' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'small', label: 'Small' },
 ];
 
-export const getFixedTier = (value) =>
-  FIXED_TIERS.find((tier) => tier.value === value);
+export const getFixedTier = (value) => {
+  const normalizedValue = value?.trim().toLowerCase();
 
-export const isFixedTier = (value) =>
-  FIXED_TIERS.some((tier) => tier.value === value);
+  return FIXED_TIERS.find(
+    (tier) =>
+      tier.value === normalizedValue ||
+      tier.label.toLowerCase() === normalizedValue
+  );
+};
+
+export const isFixedTier = (value) => !!getFixedTier(value);
+
+export const getTierDisplayLabel = (value) => {
+  const fixed = getFixedTier(value);
+
+  return fixed ? fixed.label : value;
+};

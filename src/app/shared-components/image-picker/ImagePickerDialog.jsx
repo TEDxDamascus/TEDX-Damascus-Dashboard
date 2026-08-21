@@ -20,7 +20,7 @@ import {
   useDeleteMediaMutation,
 } from '../../main/storage/StorageApi';
 import ConfirmModal from '../confirm-modal';
-import { mediaSelectionMatches } from './mediaRefUtils';
+import { mediaSelectionMatches, toDisplayImageUrl } from './mediaRefUtils';
 
 function formatBytes(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -45,7 +45,7 @@ function ImageCard({ item, currentValue, onSelect, onDelete }) {
       ].join(' ')}
     >
       <img
-        src={item.url}
+        src={toDisplayImageUrl(item.url)}
         alt={item.basename}
         loading="lazy"
         className="h-full w-full object-cover"
