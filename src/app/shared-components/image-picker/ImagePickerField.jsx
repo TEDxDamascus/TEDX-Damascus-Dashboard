@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Image } from '@mui/icons-material';
 import ImagePickerDialog from './ImagePickerDialog';
-import { mediaFormValueToPreviewSrc, normalizeMediaFormValue } from './mediaRefUtils';
+import {
+  mediaFormValueToPreviewSrc,
+  normalizeMediaFormValue,
+  toDisplayImageUrl,
+} from './mediaRefUtils';
 
 /**
  * @param {'url' | 'mediaRef'} valueMode
@@ -24,7 +28,7 @@ export default function ImagePickerField({
     valueMode === 'mediaRef'
       ? mediaFormValueToPreviewSrc(value)
       : typeof value === 'string'
-        ? value
+        ? toDisplayImageUrl(value)
         : mediaFormValueToPreviewSrc(value);
 
   const hasValue = Boolean((previewSrc || '').trim());
