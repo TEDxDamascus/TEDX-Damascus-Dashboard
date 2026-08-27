@@ -7,6 +7,17 @@ export default defineConfig(({ mode }) => {
   const apiTarget = env.VITE_API_TARGET;
   const mediaTarget = env.VITE_MEDIA_TARGET;
 
+  if (!apiTarget) {
+    console.warn(
+      '[vite] VITE_API_TARGET is missing. API calls to /api (including image upload) will fail. Add it to your .env file.',
+    );
+  }
+  if (!mediaTarget) {
+    console.warn(
+      '[vite] VITE_MEDIA_TARGET is missing. Image previews via /media will not load. Add it to your .env file.',
+    );
+  }
+
   return {
     plugins: [
       react({ jsxImportSource: '@emotion/react' }),
@@ -16,20 +27,28 @@ export default defineConfig(({ mode }) => {
       open: true,
       port: 3000,
       proxy: {
-        '/api': {
-          target: apiTarget,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '')
-        },
+        ...(apiTarget
+          ? {
+              '/api': {
+                target: apiTarget,
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, ''),
+              },
+            }
+          : {}),
         // Uploaded media (images) is served by a separate object-storage host
         // (different port than the API), so it needs its own proxy entry —
         // see mediaRefUtils.js `toDisplayImageUrl`.
-        '/media': {
-          target: mediaTarget,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/media/, '')
-        }
-      }
+        ...(mediaTarget
+          ? {
+              '/media': {
+                target: mediaTarget,
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/media/, ''),
+              },
+            }
+          : {}),
+      },
     },
     build: {
       outDir: 'build'

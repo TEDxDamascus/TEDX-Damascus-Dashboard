@@ -15,10 +15,12 @@ const axiosBaseQuery =
 
       return { data: result.data };
     } catch (error) {
+      // axiosInstance rejects with a normalizeError shape: { status, message, data, raw }
       return {
         error: {
-          status: error.response?.status,
-          data: error.response?.data || error.message,
+          status: error.status,
+          data: error.data,
+          message: error.message,
         },
       };
     }

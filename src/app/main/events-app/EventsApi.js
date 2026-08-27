@@ -28,7 +28,7 @@ const eventsApi = apiService.injectEndpoints({
         const items = response?.data ?? [];
 
         const mapped = items.map((event) => ({
-          id: event._id,
+          id: event._id || event.id,
           title: event.title,
           event_image: event.event_image,
           event_type: event.event_type,
