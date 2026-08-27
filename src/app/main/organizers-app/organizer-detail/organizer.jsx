@@ -21,6 +21,7 @@ import MediaLinksTab from './tabs/SocialLinksTab';
 
 import OrganizerModel from './models/organizerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
+import { assignOptionalArray, getApiErrorMessage } from '../../../shared/apiError';
 
 const translationDtoSchema = (fieldLabel = 'This field') =>
   z.object({
@@ -43,7 +44,7 @@ const organizerSchema = z.object({
   role: z.string().min(1, 'Role is required'),
   gallery: z
     .array(z.string().url('Each gallery image must be a valid URL'))
-    .min(1, 'At least one gallery image is required'),
+    .optional(),
   linkedin_url: z.string().optional(),
   twitter_url: z.string().optional(),
   facebook_url: z.string().optional(),
@@ -127,9 +128,9 @@ function Organizer() {
       bio: data.bio,
       role: data.role,
       image: data.image,
-      social_links,
-      gallery: data.gallery,
     };
+    assignOptionalArray(payload, 'social_links', social_links, !isNew);
+    assignOptionalArray(payload, 'gallery', data.gallery ?? [], !isNew);
 
     try {
       if (isNew) {
@@ -142,10 +143,10 @@ function Organizer() {
       navigate('/organizers');
     } catch (error) {
       console.error('Save failed:', error);
-      const backendMessage = error?.data?.details?.[0]?.message;
-      enqueueSnackbar(backendMessage || `Failed to ${isNew ? 'create' : 'update'} organizer`, {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} organizer`),
+        { variant: 'error' },
+      );
     }
   };
 

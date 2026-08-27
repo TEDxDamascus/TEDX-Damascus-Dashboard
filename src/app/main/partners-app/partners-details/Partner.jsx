@@ -18,6 +18,13 @@ import ServicesTab from './tabs/ServicesTab';
 import PartnerModel from './models/PartnerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 import { getFixedTier, getTierDisplayLabel } from './models/partnerTiers';
+import {
+  assignOptionalArray,
+  assignOptionalLocale,
+  assignOptionalObject,
+  assignOptionalString,
+  getApiErrorMessage,
+} from '../../../shared/apiError';
 
 const translationDtoSchema = (fieldLabel = 'This field') =>
   z.object({
@@ -84,7 +91,7 @@ const partnerSchema = z.object({
 
   social_links: z
     .array(z.string().min(1, 'Link cannot be empty'))
-    .min(1, 'At least one social link is required'),
+    .optional(),
 
   contact_info: z
     .object({
@@ -241,20 +248,19 @@ function Partner() {
     const hasAddress = !!addressEn || !!addressAr;
     const hasContactInfo = !!email || !!phone || hasAddress;
 
-    const cleanedContactInfo = hasContactInfo
-      ? {
-          ...(email && { email }),
-          ...(phone && { phone }),
-
-          // Only send address if at least one locale has a value
-          ...(hasAddress && {
-            address: {
-              en: addressEn,
-              ar: addressAr,
-            },
-          }),
-        }
-      : undefined;
+    let cleanedContactInfo;
+    if (hasContactInfo) {
+      cleanedContactInfo = {};
+      assignOptionalString(cleanedContactInfo, 'email', email, !isNew);
+      assignOptionalString(cleanedContactInfo, 'phone', phone, !isNew);
+      assignOptionalLocale(
+        cleanedContactInfo,
+        'address',
+        { en: addressEn, ar: addressAr },
+        !isNew,
+        false,
+      );
+    }
 
     // =========================
     // CLEAN SERVICES
@@ -309,21 +315,11 @@ function Partner() {
 
       short_description: formData.short_description,
       long_description: formData.long_description,
-
-      social_links: cleanedSocialLinks,
-
-      contact_info: cleanedContactInfo,
-
-      services: cleanedServices,
     };
 
-    // =========================
-    // DEBUG
-    // =========================
-
-    console.log('FORM DATA:', formData);
-    console.log('CLEANED CONTACT INFO:', cleanedContactInfo);
-    console.log('PAYLOAD:', payload);
+    assignOptionalObject(payload, 'contact_info', cleanedContactInfo, !isNew);
+    assignOptionalArray(payload, 'social_links', cleanedSocialLinks, !isNew);
+    assignOptionalArray(payload, 'services', cleanedServices, !isNew);
 
     // =========================
     // CREATE / UPDATE
@@ -350,11 +346,8 @@ function Partner() {
   } catch (error) {
     console.error('Save failed:', error);
 
-    const backendMessage = error?.data?.details?.[0]?.message;
-
     enqueueSnackbar(
-      backendMessage ||
-        `Failed to ${isNew ? 'create' : 'update'} partner`,
+      getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} partner`),
       {
         variant: 'error',
       },

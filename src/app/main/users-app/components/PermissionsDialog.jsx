@@ -69,7 +69,7 @@ function PermissionsDialog({ open, user, onClose }) {
       enqueueSnackbar('Permissions updated successfully', { variant: 'success' });
       onClose();
     } catch (error) {
-      enqueueSnackbar(error?.data?.message || 'Failed to update permissions', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update permissions', { variant: 'error' });
     }
   };
 

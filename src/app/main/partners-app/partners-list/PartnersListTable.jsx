@@ -117,8 +117,7 @@ function PartnersListTable({ data, totalCount, isLoading }) {
       setConfirmItem(null);
     } catch (error) {
       console.error('Delete partner failed:', error);
-
-      enqueueSnackbar('Failed to delete partner', {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete partner', {
         variant: 'error',
       });
     }

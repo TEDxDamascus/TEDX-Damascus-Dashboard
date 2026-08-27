@@ -93,8 +93,8 @@ function FormsListTable({ data, totalCount, isLoading }) {
       await deleteForm(deleteItem.id).unwrap();
       enqueueSnackbar('Form deleted successfully', { variant: 'success' });
       setDeleteItem(null);
-    } catch {
-      enqueueSnackbar('Failed to delete form', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete form', { variant: 'error' });
     }
   };
 
@@ -114,8 +114,11 @@ function FormsListTable({ data, totalCount, isLoading }) {
         enqueueSnackbar('Form unpublished', { variant: 'info' });
       }
       setPublishItem(null);
-    } catch {
-      enqueueSnackbar(`Failed to ${publish ? 'publish' : 'unpublish'} form`, { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(
+        error?.data?.message ?? error?.message ?? `Failed to ${publish ? 'publish' : 'unpublish'} form`,
+        { variant: 'error' },
+      );
     }
   };
 

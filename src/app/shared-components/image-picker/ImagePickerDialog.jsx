@@ -19,8 +19,10 @@ import {
   useUploadMediaMutation,
   useDeleteMediaMutation,
 } from '../../main/storage/StorageApi';
+import { useSnackbar } from 'notistack';
 import ConfirmModal from '../confirm-modal';
 import { mediaSelectionMatches, toDisplayImageUrl } from './mediaRefUtils';
+import { getApiErrorMessage } from '../../shared/apiError';
 
 function formatBytes(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -207,6 +209,7 @@ export default function ImagePickerDialog({ open, onClose, onSelect, currentValu
   const [pendingFile, setPendingFile] = useState(null);
   const [pendingPreview, setPendingPreview] = useState('');
   const [uploadMedia, { isLoading: isUploading }] = useUploadMediaMutation();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     if (!open) {
@@ -238,9 +241,15 @@ export default function ImagePickerDialog({ open, onClose, onSelect, currentValu
       if (id || url) {
         onSelect({ id, url });
         onClose();
+        return;
       }
-    } catch {
-      // Error surfaced by RTK / global handlers if wired; keep dialog open for retry.
+      enqueueSnackbar('Upload succeeded but the server returned no image id or url', {
+        variant: 'warning',
+      });
+    } catch (error) {
+      enqueueSnackbar(getApiErrorMessage(error, 'Failed to upload image'), {
+        variant: 'error',
+      });
     }
   };
 

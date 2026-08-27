@@ -17,19 +17,54 @@ import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
 import TeamMemberModel from './models/TeamMemberModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
+import {
+  assignOptionalArray,
+  assignOptionalLocale,
+  assignOptionalString,
+  getApiErrorMessage,
+} from '../../../shared/apiError';
+import { normalizeMediaFormValue } from '../../../shared-components/image-picker';
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
 
+const imageUrlSchema = z.preprocess((val) => {
+  if (val && typeof val === 'object') return val.url || val.secure_url || val.path || '';
+  return val ?? '';
+}, z.string().optional());
+
+function toEventIds(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === 'string' || typeof item === 'number') return String(item).trim();
+      if (item && typeof item === 'object') {
+        const id = item.id ?? item._id;
+        return id != null ? String(id).trim() : '';
+      }
+      return '';
+    })
+    .filter(Boolean);
+}
+
 const teamMemberSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
-  bio: localeObjectSchema.optional(),
-  image: z.string().optional(),
+  bio: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Bio is required'),
+  image: imageUrlSchema,
   year: z.string().min(1, 'Year is required'),
+  role: z.string().optional(),
+  category: localeObjectSchema
+    .optional()
+    .refine((v) => {
+      const en = v?.en?.trim();
+      const ar = v?.ar?.trim();
+      if (!en && !ar) return true;
+      return Boolean(en && ar);
+    }, 'Category must include both English and Arabic'),
+  events: z.preprocess(toEventIds, z.array(z.string())).optional(),
   linkedin_url: z.string().optional(),
   twitter_url: z.string().optional(),
   facebook_url: z.string().optional(),
   website_url: z.string().optional(),
-  event_id: z.string().optional(),
 });
 
 function TeamMember() {
@@ -74,13 +109,15 @@ function TeamMember() {
       reset({
         name: ensureLocaleValue(member.name),
         bio: ensureLocaleValue(member.bio),
-        image: member.image || '',
+        image: normalizeMediaFormValue(member.image).url || '',
         year: member.year ? String(member.year) : new Date().getFullYear().toString(),
+        role: member.role || '',
+        category: ensureLocaleValue(member.category),
+        events: toEventIds(member.events?.length ? member.events : member.event_id ? [member.event_id] : []),
         linkedin_url,
         twitter_url,
         facebook_url,
         website_url,
-        event_id: member.event_id || '',
       });
     }
   }, [member, isNew, reset]);
@@ -99,9 +136,13 @@ function TeamMember() {
         bio: formData.bio,
         year: formData.year,
       };
-      if (formData.image) payload.image = formData.image;
-      if (socialLink.length) payload.social_link = socialLink;
-      if (formData.event_id) payload.event_id = formData.event_id;
+      const imageUrl = normalizeMediaFormValue(formData.image).url || formData.image;
+      if (typeof imageUrl === 'string' && imageUrl) payload.image = imageUrl;
+      assignOptionalString(payload, 'role', formData.role, !isNew);
+      assignOptionalLocale(payload, 'category', formData.category, !isNew);
+      assignOptionalArray(payload, 'events', formData.events ?? [], !isNew);
+      assignOptionalArray(payload, 'social_links', socialLink, !isNew);
+      assignOptionalArray(payload, 'social_link', socialLink, !isNew);
 
       if (isNew) {
         await createMember(payload).unwrap();
@@ -111,8 +152,11 @@ function TeamMember() {
         enqueueSnackbar('Team member updated successfully', { variant: 'success' });
       }
       navigate('/team');
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} team member`, { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(
+        getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} team member`),
+        { variant: 'error' },
+      );
     }
   };
 
