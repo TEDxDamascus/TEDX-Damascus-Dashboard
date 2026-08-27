@@ -41,7 +41,7 @@ function BannedWordsPage() {
       setWord('');
       enqueueSnackbar('Banned word added', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message || 'Failed to add banned word', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to add banned word', { variant: 'error' });
     }
   };
 
@@ -51,7 +51,7 @@ function BannedWordsPage() {
       await deleteWord(id).unwrap();
       enqueueSnackbar('Banned word removed', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message || 'Failed to remove banned word', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to remove banned word', { variant: 'error' });
     }
   };
 

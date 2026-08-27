@@ -68,8 +68,8 @@ function EventsListTable({ data, totalCount, isLoading }) {
       await deleteEvent(confirmItem.id).unwrap();
       enqueueSnackbar('Deleted successfully', { variant: 'success' });
       setConfirmItem(null);
-    } catch {
-      enqueueSnackbar('Delete failed', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Delete failed', { variant: 'error' });
     }
   };
 

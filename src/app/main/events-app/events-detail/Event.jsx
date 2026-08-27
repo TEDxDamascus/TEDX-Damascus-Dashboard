@@ -14,6 +14,7 @@ import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
 import EventModel from './models/events-model';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
+import { assignOptionalArray, assignOptionalString, getApiErrorMessage } from '../../../shared/apiError';
 
 const localeObjectSchema = z.object({
   ar: z.string().optional(),
@@ -119,11 +120,8 @@ function Event() {
       const payload = {
         title: localeField(data.title),
         description: localeField(data.description),
-        breif: localeField(data.brief),
         location: localeField(data.location),
         location_description: localeField(data.location_description),
-        location_email: data.location_email || undefined,
-        location_phone: data.location_phone || undefined,
         start_time: data.start_time || undefined,
         end_time: data.end_time || undefined,
         coordinates:
@@ -137,10 +135,22 @@ function Event() {
         date: data.date,
         event_type: data.event_type || undefined,
         event_image: data.event_image || undefined,
-        gallery: data.gallery ?? [],
-        speakers: (data.speakers ?? []).map((s) => s.id ?? s),
         status: data.status || undefined,
       };
+
+      assignOptionalString(payload, 'location_email', data.location_email, !isNew);
+      assignOptionalString(payload, 'location_phone', data.location_phone, !isNew);
+      assignOptionalArray(payload, 'gallery', data.gallery ?? [], !isNew);
+      assignOptionalArray(
+        payload,
+        'speakers',
+        (data.speakers ?? []).map((s) => s.id ?? s),
+        !isNew,
+      );
+
+      if (data.brief?.en?.trim() || data.brief?.ar?.trim() || !isNew) {
+        payload.brief = localeField(data.brief);
+      }
 
       if (isNew) {
         await createEvent(payload).unwrap();
@@ -150,8 +160,11 @@ function Event() {
         await updateEvent({ id: eventId, data: payload }).unwrap();
         enqueueSnackbar('Event updated successfully', { variant: 'success' });
       }
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} event`, { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(
+        getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} event`),
+        { variant: 'error' },
+      );
     }
   };
 

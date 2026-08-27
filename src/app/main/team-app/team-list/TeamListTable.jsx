@@ -82,8 +82,8 @@ function TeamListTable({ data, totalCount, isLoading }) {
       await deleteMember(confirmItem.id).unwrap();
       enqueueSnackbar('Member deleted successfully', { variant: 'success' });
       setConfirmItem(null);
-    } catch {
-      enqueueSnackbar('Failed to delete member', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete member', { variant: 'error' });
     }
   };
 

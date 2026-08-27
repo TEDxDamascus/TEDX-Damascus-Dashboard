@@ -26,6 +26,23 @@ function BasicInfoTab({ control, errors }) {
 
         <Grid item xs={12}>
           <Controller
+            name="slug"
+            control={control}
+            render={({ field }) => (
+              <LocaleInput
+                {...field}
+                type={localeInputTypes.textField}
+                label="Slug"
+                placeholder="e.g. john-doe"
+                error={!!errors.slug}
+                helperText={errors.slug?.message || errors.slug?.en?.message || errors.slug?.ar?.message}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Controller
             name="speaker_image"
             control={control}
             render={({ field }) => (

@@ -197,7 +197,7 @@ function User() {
       }
       navigate(`/users?tab=${data.role || 'admin'}`);
     } catch (error) {
-      enqueueSnackbar(error?.data?.message || 'Failed to save user', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save user', { variant: 'error' });
     }
   };
 

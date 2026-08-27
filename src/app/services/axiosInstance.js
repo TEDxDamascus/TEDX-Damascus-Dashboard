@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { tokenService } from './tokenService';
+import { getApiErrorMessage } from '../shared/apiError';
 const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 axiosInstance.interceptors.request.use(
@@ -33,7 +35,7 @@ function forceLogout() {
 function normalizeError(error) {
   return {
     status: error.response?.status,
-    message: error.response?.data?.message || error.message || 'An unexpected error occurred',
+    message: getApiErrorMessage(error, error.message || 'An unexpected error occurred'),
     data: error.response?.data,
     raw: error,
   };

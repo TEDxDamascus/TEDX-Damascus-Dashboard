@@ -88,8 +88,8 @@ export function useFormBuilder(formId) {
         await updateForm({ id: formId, data: values }).unwrap();
         enqueueSnackbar('Settings saved', { variant: 'success' });
       }
-    } catch {
-      enqueueSnackbar('Failed to save settings', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save settings', { variant: 'error' });
     }
   });
 
@@ -106,9 +106,9 @@ export function useFormBuilder(formId) {
         formId,
         data: preparePayload(createQuestion(type, orderIndex, parentId)),
       }).unwrap();
-    } catch {
+    } catch (error) {
       setLastAddedIndex(null);
-      enqueueSnackbar('Failed to add question', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to add question', { variant: 'error' });
     }
   };
 
@@ -116,7 +116,7 @@ export function useFormBuilder(formId) {
     try {
       await updateQuestionMutation({ formId, questionId, data: preparePayload(data) }).unwrap();
     } catch (err) {
-      enqueueSnackbar('Failed to update question', { variant: 'error' });
+      enqueueSnackbar(err?.data?.message ?? err?.message ?? 'Failed to update question', { variant: 'error' });
       throw err; // re-throw so QuestionCard can stay dirty on failure
     }
   };
@@ -124,8 +124,8 @@ export function useFormBuilder(formId) {
   const handleRemoveQuestion = async (questionId) => {
     try {
       await removeQuestionMutation({ formId, questionId }).unwrap();
-    } catch {
-      enqueueSnackbar('Failed to remove question', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to remove question', { variant: 'error' });
     }
   };
 
@@ -133,8 +133,8 @@ export function useFormBuilder(formId) {
     try {
       await publishFormMutation(formId).unwrap();
       enqueueSnackbar('Form published', { variant: 'success' });
-    } catch {
-      enqueueSnackbar('Failed to publish form', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to publish form', { variant: 'error' });
     }
   };
 
@@ -142,8 +142,8 @@ export function useFormBuilder(formId) {
     try {
       await unpublishFormMutation(formId).unwrap();
       enqueueSnackbar('Form unpublished', { variant: 'info' });
-    } catch {
-      enqueueSnackbar('Failed to unpublish form', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to unpublish form', { variant: 'error' });
     }
   };
 

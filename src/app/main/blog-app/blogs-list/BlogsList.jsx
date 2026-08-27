@@ -172,7 +172,7 @@ function BlogsList() {
       await deleteBlog(deleteItem.id || deleteItem._id).unwrap();
       enqueueSnackbar('Blog deleted successfully', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message || 'Failed to delete blog', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete blog', { variant: 'error' });
     }
     setDeleteItem(null);
   };
@@ -187,7 +187,7 @@ function BlogsList() {
     try {
       await updateBlog({ id, data: { status: newStatus } }).unwrap();
     } catch (error) {
-      enqueueSnackbar(error?.data?.message || 'Failed to update blog', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update blog', { variant: 'error' });
     }
   };
 

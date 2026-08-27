@@ -16,12 +16,27 @@ import BasicInfoTab from './tabs/BasicInfoTab';
 import MediaLinksTab from './tabs/SocialLinksTab';
 import SpeakerModel from './models/SpeakerModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
+import {
+  assignOptionalArray,
+  assignOptionalLocale,
+  assignOptionalString,
+  getApiErrorMessage,
+} from '../../../shared/apiError';
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
 
 const speakerSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
+  slug: localeObjectSchema
+    .optional()
+    .refine((v) => {
+      const en = v?.en?.trim();
+      const ar = v?.ar?.trim();
+      if (!en && !ar) return true;
+      return Boolean(en && ar);
+    }, 'Slug must include both English and Arabic'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().optional(),
   bio: localeObjectSchema.optional(),
   experience: localeObjectSchema.optional(),
   brief: localeObjectSchema.optional(),
@@ -33,7 +48,6 @@ const speakerSchema = z.object({
   website_url: z.string().optional(),
   gallery: z.array(z.string()).optional(),
   video_link: z.array(z.string()).optional(),
-  phone: z.string().optional(),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
 });
@@ -77,6 +91,7 @@ function Speaker() {
 
       reset({
         name: ensureLocaleValue(speaker.name),
+        slug: ensureLocaleValue(speaker.slug),
         bio: ensureLocaleValue(speaker.bio),
         experience: ensureLocaleValue(speaker.experience),
         brief: ensureLocaleValue(speaker.brief),
@@ -111,21 +126,22 @@ function Speaker() {
 
       const payload = {
         name: formData.name,
-        bio: formData.bio,
-        experience: formData.experience,
-        brief: formData.brief,
-        description: formData.description,
         featured: formData.featured,
         active: formData.active,
       };
 
-      if (formData.email?.trim()) payload.email = formData.email.trim();
-      if (formData.phone?.trim()) payload.phone = formData.phone.trim();
+      assignOptionalLocale(payload, 'slug', formData.slug, !isNew);
+      assignOptionalLocale(payload, 'bio', formData.bio, !isNew, false);
+      assignOptionalLocale(payload, 'experience', formData.experience, !isNew, false);
+      assignOptionalLocale(payload, 'brief', formData.brief, !isNew, false);
+      assignOptionalLocale(payload, 'description', formData.description, !isNew, false);
+      assignOptionalString(payload, 'email', formData.email, !isNew);
+      assignOptionalString(payload, 'phone', formData.phone, !isNew);
       if (formData.speaker_image) payload.speaker_image = formData.speaker_image;
       const validVideoLinks = (formData.video_link ?? []).filter((v) => v?.trim());
-      if (validVideoLinks.length) payload.video_link = validVideoLinks;
-      if (formData.gallery?.length) payload.gallery = formData.gallery;
-      if (socialLinks.length) payload.social_links = socialLinks;
+      assignOptionalArray(payload, 'video_link', validVideoLinks, !isNew);
+      assignOptionalArray(payload, 'gallery', formData.gallery ?? [], !isNew);
+      assignOptionalArray(payload, 'social_links', socialLinks, !isNew);
 
       if (isNew) {
         await createSpeaker(payload).unwrap();
@@ -135,8 +151,11 @@ function Speaker() {
         enqueueSnackbar('Speaker updated successfully', { variant: 'success' });
       }
       navigate('/speakers');
-    } catch {
-      enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} speaker`, { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(
+        getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} speaker`),
+        { variant: 'error' },
+      );
     }
   };
 

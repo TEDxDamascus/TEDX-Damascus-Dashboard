@@ -80,8 +80,8 @@ function OrganizersListTable({ data, totalCount, isLoading }) {
       });
 
       setConfirmItem(null);
-    } catch {
-      enqueueSnackbar('Failed to delete organizer', {
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete organizer', {
         variant: 'error',
       });
     }

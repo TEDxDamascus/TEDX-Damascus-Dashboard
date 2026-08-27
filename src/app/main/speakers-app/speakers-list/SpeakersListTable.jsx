@@ -72,8 +72,8 @@ function SpeakersListTable({ data, totalCount, isLoading }) {
       await deleteSpeaker(confirmItem.id).unwrap();
       enqueueSnackbar('Speaker deleted successfully', { variant: 'success' });
       setConfirmItem(null);
-    } catch {
-      enqueueSnackbar('Failed to delete speaker', { variant: 'error' });
+    } catch (error) {
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete speaker', { variant: 'error' });
     }
   };
 

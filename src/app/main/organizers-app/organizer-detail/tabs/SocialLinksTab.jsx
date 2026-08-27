@@ -24,7 +24,7 @@ function GalleryPicker({ control, name, error, helperText }) {
   return (
     <Box>
       <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: error ? 'error.main' : 'text.secondary' }}>
-        Gallery *
+        Gallery
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 1.5 }}>
         {images.map((url, i) => (
