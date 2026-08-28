@@ -20,12 +20,19 @@ import { ensureLocaleValue } from '../../../shared-components/locale-input';
 import {
   assignOptionalArray,
   assignOptionalLocale,
-  assignOptionalString,
   getApiErrorMessage,
 } from '../../../shared/apiError';
 import { normalizeMediaFormValue } from '../../../shared-components/image-picker';
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
+
+const optionalBothLocales = (label) =>
+  localeObjectSchema.optional().refine((v) => {
+    const en = v?.en?.trim();
+    const ar = v?.ar?.trim();
+    if (!en && !ar) return true;
+    return Boolean(en && ar);
+  }, `${label} must include both English and Arabic`);
 
 const imageUrlSchema = z.preprocess((val) => {
   if (val && typeof val === 'object') return val.url || val.secure_url || val.path || '';
@@ -51,15 +58,8 @@ const teamMemberSchema = z.object({
   bio: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Bio is required'),
   image: imageUrlSchema,
   year: z.string().min(1, 'Year is required'),
-  role: z.string().optional(),
-  category: localeObjectSchema
-    .optional()
-    .refine((v) => {
-      const en = v?.en?.trim();
-      const ar = v?.ar?.trim();
-      if (!en && !ar) return true;
-      return Boolean(en && ar);
-    }, 'Category must include both English and Arabic'),
+  role: optionalBothLocales('Role'),
+  category: optionalBothLocales('Category'),
   events: z.preprocess(toEventIds, z.array(z.string())).optional(),
   linkedin_url: z.string().optional(),
   twitter_url: z.string().optional(),
@@ -111,7 +111,7 @@ function TeamMember() {
         bio: ensureLocaleValue(member.bio),
         image: normalizeMediaFormValue(member.image).url || '',
         year: member.year ? String(member.year) : new Date().getFullYear().toString(),
-        role: member.role || '',
+        role: ensureLocaleValue(member.role),
         category: ensureLocaleValue(member.category),
         events: toEventIds(member.events?.length ? member.events : member.event_id ? [member.event_id] : []),
         linkedin_url,
@@ -138,7 +138,7 @@ function TeamMember() {
       };
       const imageUrl = normalizeMediaFormValue(formData.image).url || formData.image;
       if (typeof imageUrl === 'string' && imageUrl) payload.image = imageUrl;
-      assignOptionalString(payload, 'role', formData.role, !isNew);
+      assignOptionalLocale(payload, 'role', formData.role, !isNew);
       assignOptionalLocale(payload, 'category', formData.category, !isNew);
       assignOptionalArray(payload, 'events', formData.events ?? [], !isNew);
       assignOptionalArray(payload, 'social_links', socialLink, !isNew);

@@ -83,18 +83,22 @@ function BasicInfoTab({ control, errors, events = [], isLoadingEvents }) {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Controller
             name="role"
             control={control}
             render={({ field }) => (
-              <TextField
+              <LocaleInput
                 {...field}
+                type={localeInputTypes.textField}
                 label="Role"
-                fullWidth
                 placeholder="e.g. Organizer, Volunteer"
                 error={!!errors.role}
-                helperText={errors.role?.message}
+                helperText={
+                  errors.role?.message ||
+                  errors.role?.en?.message ||
+                  errors.role?.ar?.message
+                }
               />
             )}
           />
