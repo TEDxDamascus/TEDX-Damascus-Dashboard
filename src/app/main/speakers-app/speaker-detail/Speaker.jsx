@@ -25,6 +25,20 @@ import {
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
 
+const optionalUrl = z
+  .string()
+  .optional()
+  .refine((v) => {
+    const value = v?.trim();
+    if (!value) return true;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, 'Must be a valid URL (e.g. https://example.com)');
+
 const speakerSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
   slug: localeObjectSchema
@@ -42,15 +56,20 @@ const speakerSchema = z.object({
   brief: localeObjectSchema.optional(),
   description: localeObjectSchema.optional(),
   speaker_image: z.string().optional(),
-  linkedin_url: z.string().optional(),
-  twitter_url: z.string().optional(),
-  facebook_url: z.string().optional(),
-  website_url: z.string().optional(),
+  linkedin_url: optionalUrl,
+  twitter_url: optionalUrl,
+  facebook_url: optionalUrl,
+  website_url: optionalUrl,
   gallery: z.array(z.string()).optional(),
   video_link: z.array(z.string()).optional(),
   featured: z.boolean().optional(),
   active: z.boolean().optional(),
 });
+
+const TAB_FIELDS = [
+  ['name', 'slug', 'email', 'phone', 'bio', 'experience', 'brief', 'description', 'speaker_image'],
+  ['linkedin_url', 'twitter_url', 'facebook_url', 'website_url', 'gallery', 'video_link'],
+];
 
 function Speaker() {
   const { speakerId } = useParams();
@@ -122,7 +141,9 @@ function Speaker() {
         formData.twitter_url,
         formData.facebook_url,
         formData.website_url,
-      ].filter((u) => u?.trim());
+      ]
+        .map((u) => u?.trim())
+        .filter(Boolean);
 
       const payload = {
         name: formData.name,
@@ -159,6 +180,15 @@ function Speaker() {
     }
   };
 
+  const onInvalid = (formErrors) => {
+    enqueueSnackbar('Please fix the highlighted fields before saving', { variant: 'error' });
+    const errorFieldNames = Object.keys(formErrors);
+    const tabIndex = TAB_FIELDS.findIndex((fields) =>
+      fields.some((f) => errorFieldNames.includes(f)),
+    );
+    if (tabIndex !== -1) setCurrentTab(tabIndex);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -191,7 +221,7 @@ function Speaker() {
           <Button
             variant="contained"
             startIcon={isSaving ? <CircularProgress size={14} color="inherit" /> : <Save />}
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, onInvalid)}
             disabled={isSaving}
             sx={{
               bgcolor: 'var(--color-primary)',

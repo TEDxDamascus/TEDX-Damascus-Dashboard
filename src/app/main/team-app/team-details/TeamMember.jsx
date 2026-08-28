@@ -53,6 +53,25 @@ function toEventIds(raw) {
     .filter(Boolean);
 }
 
+function toUrlString(item) {
+  if (typeof item === 'string') return item.trim();
+  if (item && typeof item === 'object') {
+    return String(item.url || item.link || item.href || item.value || '').trim();
+  }
+  return '';
+}
+
+function getMemberSocialLinks(member) {
+  const raw = member?.social_links ?? member?.social_link ?? [];
+  if (typeof raw === 'string') return raw.trim() ? [raw.trim()] : [];
+  if (!Array.isArray(raw)) return [];
+  return raw.map(toUrlString).filter(Boolean);
+}
+
+function pickSocialUrl(urls, ...needles) {
+  return urls.find((u) => needles.some((needle) => u.toLowerCase().includes(needle))) ?? '';
+}
+
 const teamMemberSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
   bio: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Bio is required'),
@@ -93,18 +112,20 @@ function TeamMember() {
 
   useEffect(() => {
     if (member && !isNew) {
-      const links = Array.isArray(member.social_link) ? member.social_link : [];
-      const linkedin_url = links.find((u) => u.includes('linkedin')) ?? '';
-      const twitter_url = links.find((u) => u.includes('twitter') || u.includes('x.com')) ?? '';
-      const facebook_url = links.find((u) => u.includes('facebook')) ?? '';
+      const links = getMemberSocialLinks(member);
+      const linkedin_url = pickSocialUrl(links, 'linkedin');
+      const twitter_url = pickSocialUrl(links, 'twitter', 'x.com');
+      const facebook_url = pickSocialUrl(links, 'facebook');
       const website_url =
-        links.find(
-          (u) =>
-            !u.includes('linkedin') &&
-            !u.includes('twitter') &&
-            !u.includes('x.com') &&
-            !u.includes('facebook'),
-        ) ?? '';
+        links.find((u) => {
+          const value = u.toLowerCase();
+          return (
+            !value.includes('linkedin') &&
+            !value.includes('twitter') &&
+            !value.includes('x.com') &&
+            !value.includes('facebook')
+          );
+        }) ?? '';
 
       reset({
         name: ensureLocaleValue(member.name),
@@ -142,7 +163,6 @@ function TeamMember() {
       assignOptionalLocale(payload, 'category', formData.category, !isNew);
       assignOptionalArray(payload, 'events', formData.events ?? [], !isNew);
       assignOptionalArray(payload, 'social_links', socialLink, !isNew);
-      assignOptionalArray(payload, 'social_link', socialLink, !isNew);
 
       if (isNew) {
         await createMember(payload).unwrap();
