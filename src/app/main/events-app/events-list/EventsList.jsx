@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTableState } from '../../../shared-components/custom-table';
 import EventsListHeader from './EventsListHeader';
 import EventsListTable from './EventsListTable';
@@ -6,28 +6,35 @@ import { useGetEventsQuery } from '../EventsApi';
 import { useOwnershipScope } from '../../../shared/ownership/useOwnershipScope';
 
 const TABLE_ID = 'events';
+const FETCH_ALL_LIMIT = 1000;
 
 function EventsList() {
   const { params } = useTableState(TABLE_ID);
   const { withOwnerParams, filterOwned } = useOwnershipScope();
-  const queryArgs = useMemo(() => withOwnerParams(params), [params, withOwnerParams]);
+
+  const queryArgs = useMemo(
+    () =>
+      withOwnerParams({
+        page: 1,
+        pageSize: FETCH_ALL_LIMIT,
+        search: params.search,
+      }),
+    [params.search, withOwnerParams],
+  );
   const { data, isLoading } = useGetEventsQuery(queryArgs, { refetchOnMountOrArgChange: true });
 
-  const [filteredData, setFilteredData] = useState([]);
+  const allItems = useMemo(() => filterOwned(data?.items ?? []), [data, filterOwned]);
 
-  useEffect(() => {
-    setFilteredData(filterOwned(data?.items ?? []));
-  }, [data, filterOwned]);
+  const pageRows = useMemo(() => {
+    const start = (params.page - 1) * params.pageSize;
+    return allItems.slice(start, start + params.pageSize);
+  }, [allItems, params.page, params.pageSize]);
 
   return (
     <div className="p-6 pt-8">
       <EventsListHeader />
 
-      <EventsListTable
-        data={filteredData}
-        totalCount={filteredData.length || (data?.total ?? 0)}
-        isLoading={isLoading}
-      />
+      <EventsListTable data={pageRows} totalCount={allItems.length} isLoading={isLoading} />
     </div>
   );
 }
