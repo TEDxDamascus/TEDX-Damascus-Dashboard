@@ -34,6 +34,7 @@ import StatusBadge from '../../../shared-components/status-badge';
 import Breadcrumb from '../../../shared-components/breadcrumb';
 
 const TABLE_ID = 'form-submissions';
+const FETCH_ALL_LIMIT = 1000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -224,13 +225,19 @@ export default function FormSubmissions() {
   const colQuestions = displayQuestions.slice(0, 3);
 
   const { params } = useTableState(TABLE_ID);
-  const { data, isLoading } = useGetFormSubmissionsQuery({ formId, ...params });
+  const { data, isLoading } = useGetFormSubmissionsQuery({
+    formId,
+    page: 1,
+    pageSize: FETCH_ALL_LIMIT,
+  });
 
-  const submissions = (data?.data?.items ?? []).map((sub) => ({
+  const allSubmissions = (data?.data?.items ?? []).map((sub) => ({
     ...sub,
     _answerMap: buildAnswerMap(sub.answers),
   }));
-  const totalCount = data?.data?.total ?? 0;
+  const totalCount = allSubmissions.length;
+  const start = (params.page - 1) * params.pageSize;
+  const submissions = allSubmissions.slice(start, start + params.pageSize);
 
   function handleExportExcel() {
     const headers = [
@@ -240,7 +247,7 @@ export default function FormSubmissions() {
       'Submitted At',
     ];
 
-    const rows = submissions.map((sub) => [
+    const rows = allSubmissions.map((sub) => [
       sub.id,
       ...displayQuestions.map((q) => {
         const val = formatAnswer(sub._answerMap?.[q.id], q);
