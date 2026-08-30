@@ -29,9 +29,24 @@ const teamApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
         },
       }),
       transformResponse: (response) => {
-        const rawItems = response?.data ?? [];
-        const items = rawItems.map((m) => ({ ...m, id: m._id || m.id }));
-        return { data: { items, total: response?.total ?? items.length } };
+        const raw = response?.data;
+        const itemsArr = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.items)
+            ? raw.items
+            : Array.isArray(raw?.data)
+              ? raw.data
+              : [];
+        const items = itemsArr.map((m) => ({ ...m, id: m._id || m.id }));
+        const total =
+          response?.meta?.total ??
+          response?.pagination?.total ??
+          raw?.total ??
+          response?.total ??
+          response?.totalCount ??
+          response?.count ??
+          items.length;
+        return { data: { items, total: Number(total) || items.length } };
       },
       providesTags: ['TeamMembers'],
     }),
