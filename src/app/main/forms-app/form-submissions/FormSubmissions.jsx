@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 import * as XLSX from 'xlsx';
 import {
   Visibility,
@@ -26,6 +27,7 @@ import {
 import {
   useGetFormQuery,
   useGetFormSubmissionsQuery,
+  useLazyGetFormSubmissionsQuery,
   useExportSubmissionPdfMutation,
 } from '../FormsApi';
 import { useTableState } from '../../../shared-components/custom-table';
@@ -34,7 +36,8 @@ import StatusBadge from '../../../shared-components/status-badge';
 import Breadcrumb from '../../../shared-components/breadcrumb';
 
 const TABLE_ID = 'form-submissions';
-const FETCH_ALL_LIMIT = 1000;
+// Backend OffsetPaginationDto caps `limit` at 100.
+const API_PAGE_LIMIT = 100;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -209,10 +212,16 @@ function ExportPdfDialog({ open, onClose, questions, submission, formId }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+function mapSubmission(sub) {
+  return { ...sub, _answerMap: buildAnswerMap(sub.answers) };
+}
+
 export default function FormSubmissions() {
   const { formId } = useParams();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [exportTarget, setExportTarget] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: formResponse } = useGetFormQuery(formId);
   const form = formResponse?.data;
@@ -225,53 +234,79 @@ export default function FormSubmissions() {
   const colQuestions = displayQuestions.slice(0, 3);
 
   const { params } = useTableState(TABLE_ID);
-  const { data, isLoading } = useGetFormSubmissionsQuery({
+  const pageSize = Math.min(params.pageSize || 10, API_PAGE_LIMIT);
+  const { data, isLoading, isError, error } = useGetFormSubmissionsQuery({
     formId,
-    page: 1,
-    pageSize: FETCH_ALL_LIMIT,
+    page: params.page,
+    pageSize,
   });
+  const [fetchSubmissions] = useLazyGetFormSubmissionsQuery();
 
-  const allSubmissions = (data?.data?.items ?? []).map((sub) => ({
-    ...sub,
-    _answerMap: buildAnswerMap(sub.answers),
-  }));
-  const totalCount = allSubmissions.length;
-  const start = (params.page - 1) * params.pageSize;
-  const submissions = allSubmissions.slice(start, start + params.pageSize);
+  const submissions = (data?.data?.items ?? []).map(mapSubmission);
+  const totalCount = data?.data?.total ?? submissions.length;
 
-  function handleExportExcel() {
-    const headers = [
-      'Submission ID',
-      ...displayQuestions.map((q) => resolveLabel(q.title) || `Question ${q.orderIndex + 1}`),
-      'Status',
-      'Submitted At',
-    ];
+  async function handleExportExcel() {
+    setIsExporting(true);
+    try {
+      const collected = [];
+      let page = 1;
+      let total = Infinity;
 
-    const rows = allSubmissions.map((sub) => [
-      sub.id,
-      ...displayQuestions.map((q) => {
-        const val = formatAnswer(sub._answerMap?.[q.id], q);
-        return val === '—' ? '' : val;
-      }),
-      sub.status ?? 'pending',
-      formatDate(sub.submittedAt),
-    ]);
+      while (collected.length < total) {
+        const result = await fetchSubmissions({
+          formId,
+          page,
+          pageSize: API_PAGE_LIMIT,
+        }).unwrap();
+        const items = result?.data?.items ?? [];
+        total = result?.data?.total ?? collected.length + items.length;
+        collected.push(...items);
+        if (!items.length) break;
+        page += 1;
+      }
 
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws['!cols'] = headers.map((_, i) => ({ wch: i === 0 ? 28 : 24 }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Submissions');
+      const headers = [
+        'Submission ID',
+        ...displayQuestions.map((q) => resolveLabel(q.title) || `Question ${q.orderIndex + 1}`),
+        'Status',
+        'Submitted At',
+      ];
 
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `submissions-${formId}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const rows = collected.map((sub) => {
+        const answerMap = buildAnswerMap(sub.answers);
+        return [
+          sub.id,
+          ...displayQuestions.map((q) => {
+            const val = formatAnswer(answerMap[q.id], q);
+            return val === '—' ? '' : val;
+          }),
+          sub.status ?? 'pending',
+          formatDate(sub.submittedAt),
+        ];
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = headers.map((_, i) => ({ wch: i === 0 ? 28 : 24 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Submissions');
+
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `submissions-${formId}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      enqueueSnackbar(err?.data?.message ?? err?.message ?? 'Failed to export submissions', {
+        variant: 'error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   const COLUMNS = [
@@ -344,10 +379,11 @@ export default function FormSubmissions() {
           {totalCount > 0 && (
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-100"
+              disabled={isExporting}
+              className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <TableChart style={{ fontSize: 16 }} />
-              Export Excel
+              {isExporting ? 'Exporting…' : 'Export Excel'}
             </button>
           )}
           {totalCount > 0 && (
@@ -366,7 +402,11 @@ export default function FormSubmissions() {
         totalCount={totalCount}
         isLoading={isLoading}
         rowActions={rowActions}
-        emptyMessage="No submissions yet for this form."
+        emptyMessage={
+          isError
+            ? error?.data?.message ?? error?.message ?? 'Failed to load submissions.'
+            : 'No submissions yet for this form.'
+        }
       />
 
       {exportTarget && (
