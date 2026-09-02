@@ -214,6 +214,7 @@ export const {
   usePublishFormMutation,
   useUnpublishFormMutation,
   useGetFormSubmissionsQuery,
+  useLazyGetFormSubmissionsQuery,
   useGetFormSubmissionQuery,
   useExportSubmissionPdfMutation,
 } = formsApi;
