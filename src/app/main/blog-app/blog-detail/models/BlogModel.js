@@ -24,7 +24,7 @@ const BlogModel = (data) =>
     canonical_url: '',
     og_title: defaultLocaleValue(),
     og_description: defaultLocaleValue(),
-    author_type: '',
+    author_type: 'no_author',
     author_admin: null,
     author_name: defaultLocaleValue(),
     author_description: defaultLocaleValue(),
