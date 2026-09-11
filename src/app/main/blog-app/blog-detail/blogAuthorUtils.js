@@ -14,6 +14,55 @@ function pickAuthorLabel(item) {
   return String(item.label || item.email || '').trim();
 }
 
+function localeFromUnknown(raw) {
+  if (!raw) return { en: '', ar: '' };
+  if (typeof raw === 'string') return { en: raw, ar: '' };
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    return {
+      en: String(raw.en ?? ''),
+      ar: String(raw.ar ?? ''),
+    };
+  }
+  return { en: '', ar: '' };
+}
+
+/** Read `author_description` from list/detail payloads (flat or nested `author`). */
+export function extractAuthorDescription(source) {
+  if (!source || typeof source !== 'object') return { en: '', ar: '' };
+  const nested = source.author && typeof source.author === 'object' ? source.author : null;
+  return localeFromUnknown(
+    source.author_description ?? nested?.description ?? nested?.author_description ?? null,
+  );
+}
+
+export function authorDescriptionHasText(value) {
+  const d = localeFromUnknown(value);
+  return Boolean(String(d.en || '').trim() || String(d.ar || '').trim());
+}
+
+/** `{ en, ar }` for PATCH/POST, or `null` when both locales are empty. */
+export function toAuthorDescriptionApi(value) {
+  const d = localeFromUnknown(value);
+  const en = String(d.en || '').trim();
+  const ar = String(d.ar || '').trim();
+  if (!en && !ar) return null;
+  return { en, ar };
+}
+
+export function sourceHasAuthor(source) {
+  if (!source || typeof source !== 'object') return false;
+  const nested = source.author && typeof source.author === 'object' ? source.author : null;
+  const type = String(source.author_type || nested?.type || nested?.author_type || '').toLowerCase();
+  if (type === 'no_author') return false;
+  if (type === 'admin' || type === 'external' || type === 'custom') return true;
+  const userId = source.author_user_id ?? source.user_id ?? source.author_admin?.id ?? nested?.user_id;
+  if (userId) return true;
+  const name = source.author_name ?? nested?.name;
+  if (typeof name === 'string' && name.trim()) return true;
+  if (name && typeof name === 'object' && (name.en || name.ar)) return true;
+  return false;
+}
+
 function extractAuthorOptionsArray(body) {
   const d = body?.data;
   if (Array.isArray(d)) return d;
@@ -43,30 +92,61 @@ export function authorOptionsFromApi(body) {
 }
 
 export function mapAuthorFromApi(source) {
-  const authorType = String(source?.author_type || '').toLowerCase();
-  const userId = source?.author_user_id ?? source?.user_id;
+  const nestedAuthor = source?.author && typeof source.author === 'object' ? source.author : null;
+  const authorType = String(source?.author_type || nestedAuthor?.type || '').toLowerCase();
+  const userId = source?.author_user_id ?? source?.user_id ?? nestedAuthor?.user_id;
   const userIdStr =
     userId != null && userId !== '' && isLikelyMongoObjectId(String(userId))
       ? String(userId)
       : null;
 
-  if (authorType === 'external' || (!userIdStr && source?.author_name)) {
-    const imageFromApi = normalizeMediaFormValue(source.author_image ?? source.author_image_url);
+  if (authorType === 'no_author' || (!authorType && !userIdStr && !source?.author_name && !nestedAuthor?.name)) {
+    return {
+      author_type: 'no_author',
+      author_admin: null,
+      author_name: ensureLocaleValue(),
+      author_description: ensureLocaleValue(),
+      author_image: { id: '', url: '' },
+      author_image_url: '',
+    };
+  }
+
+  if (authorType === 'external' || authorType === 'custom' || (!userIdStr && (source?.author_name || nestedAuthor?.name))) {
+    // API nests the image inside source.author.image — also check flat variants
+    const rawImage =
+      source.author_image ??
+      source.author_photo ??
+      nestedAuthor?.image ??    // ← source.author.image (الشكل الحقيقي للـ API)
+      source.photo ??
+      source.image ??
+      source.avatar ??
+      null;
+
+    const rawImageUrl =
+      source.author_image_url ??
+      source.author_photo_url ??
+      nestedAuthor?.image_url ?? // ← source.author.image_url
+      source.photo_url ??
+      source.image_url ??
+      source.avatar_url ??
+      null;
+
+    const imageFromApi = normalizeMediaFormValue(rawImage ?? rawImageUrl);
+
     const externalUrl =
-      typeof source.author_image_url === 'string' ? source.author_image_url.trim() : '';
+      typeof rawImageUrl === 'string'
+        ? rawImageUrl.trim()
+        : typeof rawImage === 'string' && !isLikelyMongoObjectId(rawImage)
+          ? rawImage.trim()
+          : '';
 
     return {
       author_type: 'external',
       author_admin: null,
-      author_name: ensureLocaleValue(source.author_name),
-      author_description: ensureLocaleValue(source.author_description),
+      author_name: localeFromUnknown(source.author_name ?? nestedAuthor?.name),
+      author_description: extractAuthorDescription(source),
       author_image: imageFromApi,
-      author_image_url:
-        externalUrl ||
-        (typeof source.author_image === 'string' &&
-        !isLikelyMongoObjectId(source.author_image)
-          ? source.author_image.trim()
-          : ''),
+      author_image_url: externalUrl,
     };
   }
 
@@ -80,47 +160,66 @@ export function mapAuthorFromApi(source) {
       pickAuthorLabel({ name: source.user_name }) ||
       userIdStr;
 
+    const nestedName =
+      source.author && typeof source.author === 'object' ? source.author.name : null;
+    const authorName = localeFromUnknown(source.author_name ?? nestedName);
+    if (!authorName.en && !authorName.ar && label) {
+      authorName.en = label;
+    }
+
+    const nestedAuthor = source.author && typeof source.author === 'object' ? source.author : null;
+    const rawImage =
+      source.author_image ??
+      nestedAuthor?.image ??
+      null;
+    const rawImageUrl =
+      source.author_image_url ??
+      nestedAuthor?.image_url ??
+      null;
+
     return {
-      author_type: userIdStr ? 'admin' : '',
-      author_admin: userIdStr ? { id: userIdStr, label: label || userIdStr } : null,
-      author_name: ensureLocaleValue(),
-      author_description: ensureLocaleValue(),
-      author_image: { id: '', url: '' },
-      author_image_url: '',
+      author_type: 'external',
+      author_admin: null,
+      author_name: authorName,
+      author_description: extractAuthorDescription(source),
+      author_image: normalizeMediaFormValue(rawImage ?? rawImageUrl),
+      author_image_url:
+        typeof rawImageUrl === 'string'
+          ? rawImageUrl.trim()
+          : '',
     };
   }
 
   return {
-    author_type: '',
+    author_type: 'no_author',
     author_admin: null,
     author_name: ensureLocaleValue(),
-    author_description: ensureLocaleValue(),
+    author_description: extractAuthorDescription(source),
     author_image: { id: '', url: '' },
     author_image_url: '',
   };
 }
 
 export function buildAuthorApiPayload(data, sanitizeLocaleObject) {
-  const type = String(data?.author_type || '').toLowerCase();
+  const type = String(data?.author_type || 'no_author').toLowerCase();
+  const description = sanitizeLocaleObject(data.author_description);
 
-  if (type === 'admin') {
-    const id = data?.author_admin?.id && isLikelyMongoObjectId(String(data.author_admin.id).trim());
-    if (!id) return {};
-    return {
-      author_type: 'admin',
-      author_user_id: String(data.author_admin.id).trim(),
-    };
+  if (type === 'no_author' || type === '') {
+    return { author_type: 'no_author' };
   }
 
-  if (type === 'external') {
+  if (type === 'external' || type === 'custom' || type === 'admin') {
     const name = sanitizeLocaleObject(data.author_name);
-    const description = sanitizeLocaleObject(data.author_description);
-    const hasName = Boolean(name.en || name.ar);
-    if (!hasName) return {};
+    const label = String(data?.author_admin?.label || '').trim();
+    const hasName = Boolean(name.en || name.ar || label);
+    if (!hasName) return { author_type: 'no_author' };
 
     const payload = {
       author_type: 'external',
-      author_name: name,
+      author_name: {
+        en: name.en || label,
+        ar: name.ar || '',
+      },
       author_description: description,
     };
 
@@ -136,17 +235,14 @@ export function buildAuthorApiPayload(data, sanitizeLocaleObject) {
     return payload;
   }
 
-  return {};
+  return { author_type: 'no_author' };
 }
 
 export function getAuthorDisplayName(blog, locale = 'en') {
   if (!blog) return '';
-  if (blog.author_type === 'external') {
+  if (blog.author_type === 'external' || blog.author_type === 'admin') {
     const name = ensureLocaleValue(blog.author_name);
-    return String(name[locale] || name.en || name.ar || '').trim();
-  }
-  if (blog.author_type === 'admin' && blog.author_admin?.label) {
-    return String(blog.author_admin.label).trim();
+    return String(name[locale] || name.en || name.ar || blog.author_admin?.label || '').trim();
   }
   return '';
 }
