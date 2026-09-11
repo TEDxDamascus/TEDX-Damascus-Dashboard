@@ -17,7 +17,6 @@ import {
   useDeleteBlogReferenceMutation,
   useGetBlogQuery,
   useGetBlogFontsQuery,
-  useGetBlogAuthorOptionsQuery,
   useGetBlogReferencesByBlogQuery,
   useUpdateBlogMutation,
   useUpdateBlogReferenceMutation,
@@ -48,8 +47,7 @@ const blogSchema = z.object({
   blog_image: z.union([mediaRefSchema, z.string()]).optional(),
   read_time: z.coerce.number().min(0).optional(),
   tags: z.array(z.string()).optional(),
-  author_type: z.enum(['', 'admin', 'external']).optional(),
-  author_admin: z.union([z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
+  author_type: z.enum(['', 'no_author', 'admin', 'external']).optional(),
   author_name: localeObjectSchema.optional(),
   author_description: localeObjectSchema.optional(),
   author_image: z.union([mediaRefSchema, z.string()]).optional(),
@@ -68,6 +66,19 @@ const blogSchema = z.object({
   og_title: localeObjectSchema,
   og_description: localeObjectSchema,
   blog_references: z.array(blogReferenceRowSchema).optional(),
+}).superRefine((data, ctx) => {
+  if (data.status !== 'published') return;
+  const type = String(data.author_type || '').toLowerCase();
+  if (type !== 'external' && type !== 'custom' && type !== 'admin') return;
+  const desc = data.author_description;
+  const hasDesc = Boolean(String(desc?.en || '').trim() || String(desc?.ar || '').trim());
+  if (!hasDesc) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Author description is required when an author is selected',
+      path: ['author_description'],
+    });
+  }
 });
 
 function sanitizeLocaleObject(value) {
@@ -261,7 +272,7 @@ function Blog() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { enqueueSnackbar } = useSnackbar();
-  const { user, userId, canManage, needsOwnershipScope, isSuperAdmin } = useOwnershipScope();
+  const { userId, canManage, needsOwnershipScope, isSuperAdmin } = useOwnershipScope();
   const isNew = pathname.endsWith('/blogs/add');
   const isEditRoute = pathname.endsWith('/edit');
   const {
@@ -303,7 +314,6 @@ function Blog() {
   });
 
   const { data: blogFonts, isLoading: fontsLoading } = useGetBlogFontsQuery();
-  const { isLoading: authorOptionsLoading } = useGetBlogAuthorOptionsQuery();
   const defaultContentFont = blogFonts?.default || 'cairo';
 
   const lastHydratedBlogIdRef = useRef(null);
@@ -393,19 +403,9 @@ function Blog() {
   const fetchRelatedBlogsOptions = (query) => searchBlogOptions(query, { excludeId: blogId });
 
   const onSubmit = async (data) => {
-    // Associate new blogs with the logged-in admin when no author was chosen
     const formData = { ...data };
-    if (isNew && !formData.author_type && userId && !isSuperAdmin) {
-      formData.author_type = 'admin';
-      formData.author_admin = {
-        id: userId,
-        label: user?.name || user?.email || userId,
-      };
-    }
-
     const payload = buildBlogApiPayload(formData, defaultContentFont);
-    if (isNew && userId && !payload.author_user_id && !isSuperAdmin) {
-      payload.author_user_id = userId;
+    if (isNew && userId && !isSuperAdmin) {
       payload.created_by = userId;
     }
 
@@ -471,6 +471,13 @@ function Blog() {
       }
     } catch {
       enqueueSnackbar(`Failed to ${isNew ? 'create' : 'update'} blog`, { variant: 'error' });
+    }
+  };
+
+  const onInvalid = (formErrors) => {
+    const authorDescError = formErrors?.author_description?.message;
+    if (authorDescError) {
+      enqueueSnackbar(authorDescError, { variant: 'warning' });
     }
   };
 
@@ -540,7 +547,7 @@ function Blog() {
           <Button
             variant="contained"
             startIcon={busySaving ? <CircularProgress size={14} color="inherit" /> : <Save />}
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, onInvalid)}
             disabled={isSubmitting || busySaving}
             className="bg-tedx-red hover:bg-tedx-red-dark"
           >
@@ -563,7 +570,6 @@ function Blog() {
             fetchCategoryOptions={searchBlogCategoryOptions}
             blogFonts={blogFonts}
             fontsLoading={fontsLoading}
-            authorOptionsLoading={authorOptionsLoading}
           />
         </Box>
       </Paper>

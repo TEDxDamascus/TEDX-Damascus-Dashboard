@@ -77,23 +77,43 @@ function invalidateBlogReferenceTags(blogId, referenceId) {
   return tags;
 }
 
+/** Search valid blog authors from /blogs/author-options (backend filters admins/superadmins only). */
 export async function searchBlogAuthorOptions(query) {
   try {
     const { data: body } = await axiosInstance({ url: '/blogs/author-options', method: 'get' });
-    const list = authorOptionsFromApi(body);
-    const term = String(query || '')
-      .trim()
-      .toLowerCase();
-    return list
-      .filter((item) => {
-        if (!term) return true;
-        const blob = [item.label, item.id, item.imageUrl].join(' ').toLowerCase();
-        return blob.includes(term);
+    const rawItems = Array.isArray(body?.data) ? body.data : [];
+
+    const term = String(query || '').trim().toLowerCase();
+
+    const items = rawItems
+      .map((item) => {
+        const id = String(item._id || item.id || '').trim();
+        if (!id) return null;
+        // name may be null — fallback to email, username, then id
+        const label =
+          (typeof item.name === 'string' ? item.name.trim() : '') ||
+          (item.name?.en || item.name?.ar || '') ||
+          (typeof item.email === 'string' ? item.email.trim() : '') ||
+          (typeof item.username === 'string' ? item.username.trim() : '') ||
+          id;
+        return { id, label };
       })
+      .filter(Boolean);
+
+    if (!term) return items.slice(0, 20);
+    return items
+      .filter((u) => u.label.toLowerCase().includes(term) || u.id.includes(term))
       .slice(0, 20);
-  } catch {
+  } catch (err) {
+    console.error('[searchBlogAuthorOptions] error:', err?.message);
     return [];
   }
+}
+
+/** GET `/blogs/:id` — used when list rows omit author fields (e.g. quick-publish). */
+export async function fetchBlogById(blogId) {
+  const { data: body } = await axiosInstance({ url: `/blogs/${blogId}`, method: 'get' });
+  return body?.data ?? body;
 }
 
 const blogsApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({

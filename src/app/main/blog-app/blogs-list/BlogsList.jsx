@@ -17,7 +17,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import Breadcrumb from '../../../shared-components/breadcrumb';
-import { useDeleteBlogMutation, useGetBlogsQuery, useUpdateBlogMutation } from '../BlogsApi';
+import { useDeleteBlogMutation, useGetBlogsQuery, useUpdateBlogMutation, fetchBlogById } from '../BlogsApi';
 import { useGetBlogCategoriesQuery } from '../blog-categories/BlogCategoriesApi';
 import { mediaFieldToDisplayUrl } from '../../../shared-components/image-picker';
 import ConfirmModal from '../../../shared-components/confirm-modal';
@@ -184,8 +184,22 @@ function BlogsList() {
     }
     const id = blog.id || blog._id;
     const newStatus = blog.status === 'published' ? 'draft' : 'published';
+    const payload = { status: newStatus };
+
+    if (newStatus === 'published') {
+      try {
+        const record = await fetchBlogById(id);
+        const type = String(record?.author_type || record?.author?.type || '').toLowerCase();
+        if (!type || type === 'no_author') {
+          payload.author_type = 'no_author';
+        }
+      } catch {
+        // Status-only update; backend will reject if an author is still required
+      }
+    }
+
     try {
-      await updateBlog({ id, data: { status: newStatus } }).unwrap();
+      await updateBlog({ id, data: payload }).unwrap();
     } catch (error) {
       enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update blog', { variant: 'error' });
     }

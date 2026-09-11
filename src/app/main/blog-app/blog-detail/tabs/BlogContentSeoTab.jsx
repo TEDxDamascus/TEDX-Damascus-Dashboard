@@ -63,7 +63,6 @@ function BlogContentSeoTab({
   fetchCategoryOptions,
   blogFonts,
   fontsLoading,
-  authorOptionsLoading,
 }) {
   const titleValue = useWatch({ control, name: 'title' });
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -340,11 +339,7 @@ function BlogContentSeoTab({
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <AuthorSection
-            control={control}
-            errors={errors}
-            authorOptionsLoading={authorOptionsLoading}
-          />
+          <AuthorSection control={control} errors={errors} />
         </Grid>
 
         <Grid item xs={12}>
