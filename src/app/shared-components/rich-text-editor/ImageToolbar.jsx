@@ -130,9 +130,7 @@ export default function ImageToolbar({ editor }) {
         ))}
       </div>
 
-      {currentWidth ? (
-        <span className="text-xs text-blue-700">العرض: {currentWidth}px</span>
-      ) : null}
+      {currentWidth ? <span className="text-xs text-blue-700">العرض: {currentWidth}px</span> : null}
 
       <ToolbarTooltip title="حذف الصورة">
         <button

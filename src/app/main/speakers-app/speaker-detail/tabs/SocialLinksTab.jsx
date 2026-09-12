@@ -1,14 +1,6 @@
 import { useState } from 'react';
 import { Controller, useController } from 'react-hook-form';
-import {
-  TextField,
-  Grid,
-  Box,
-  Typography,
-  IconButton,
-  Button,
-  Paper,
-} from '@mui/material';
+import { TextField, Grid, Box, Typography, IconButton, Button, Paper } from '@mui/material';
 import { Add, DeleteOutline, YouTube } from '@mui/icons-material';
 import { ImagePickerDialog } from '../../../../shared-components/image-picker';
 
@@ -157,7 +149,7 @@ function VideoLinksPicker({ control, name }) {
             fontSize: 13,
           }}
         >
-          No video links added yet. Click "Add Video Link" to add one.
+          No video links added yet. Click &quot;Add Video Link&quot; to add one.
         </Paper>
       )}
 
@@ -172,9 +164,7 @@ function VideoLinksPicker({ control, name }) {
               fullWidth
               size="small"
               InputProps={{
-                startAdornment: (
-                  <YouTube sx={{ color: '#FF0000', fontSize: 18, mr: 0.5 }} />
-                ),
+                startAdornment: <YouTube sx={{ color: '#FF0000', fontSize: 18, mr: 0.5 }} />,
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {

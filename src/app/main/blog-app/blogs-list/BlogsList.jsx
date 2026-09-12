@@ -17,7 +17,12 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import Breadcrumb from '../../../shared-components/breadcrumb';
-import { useDeleteBlogMutation, useGetBlogsQuery, useUpdateBlogMutation, fetchBlogById } from '../BlogsApi';
+import {
+  useDeleteBlogMutation,
+  useGetBlogsQuery,
+  useUpdateBlogMutation,
+  fetchBlogById,
+} from '../BlogsApi';
 import { useGetBlogCategoriesQuery } from '../blog-categories/BlogCategoriesApi';
 import { mediaFieldToDisplayUrl } from '../../../shared-components/image-picker';
 import ConfirmModal from '../../../shared-components/confirm-modal';
@@ -115,16 +120,7 @@ function BlogsList() {
         ...(categoryId ? { category_id: categoryId } : {}),
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
-    [
-      page,
-      pageSize,
-      statusFilter,
-      categoryId,
-      debouncedSearch,
-      locale,
-      sortBy,
-      withOwnerParams,
-    ],
+    [page, pageSize, statusFilter, categoryId, debouncedSearch, locale, sortBy, withOwnerParams],
   );
 
   const { data, isLoading } = useGetBlogsQuery(queryArgs);
@@ -150,7 +146,9 @@ function BlogsList() {
   const displayBlogs = clientScoped
     ? filteredBlogs.slice((page - 1) * pageSize, page * pageSize)
     : filteredBlogs;
-  const total = clientScoped ? filteredBlogs.length : Number(data?.data?.total ?? filteredBlogs.length);
+  const total = clientScoped
+    ? filteredBlogs.length
+    : Number(data?.data?.total ?? filteredBlogs.length);
   const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
 
   useEffect(() => {
@@ -172,7 +170,9 @@ function BlogsList() {
       await deleteBlog(deleteItem.id || deleteItem._id).unwrap();
       enqueueSnackbar('Blog deleted successfully', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete blog', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete blog', {
+        variant: 'error',
+      });
     }
     setDeleteItem(null);
   };
@@ -201,7 +201,9 @@ function BlogsList() {
     try {
       await updateBlog({ id, data: payload }).unwrap();
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update blog', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update blog', {
+        variant: 'error',
+      });
     }
   };
 

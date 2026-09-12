@@ -14,7 +14,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Dashboard,
   People,
   Event,
   ChevronLeft,
@@ -25,7 +24,6 @@ import {
   LabelOutlined,
   Handshake,
   Forum,
-  Settings,
 } from '@mui/icons-material';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -35,12 +33,12 @@ const menuItems = [
   // { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
   { text: 'Speakers', icon: <RecordVoiceOver />, path: '/speakers' },
   { text: 'Partners', icon: <Handshake />, path: '/partners' },
-   { text: 'Users', icon: <People />, path: '/users' },
+  { text: 'Users', icon: <People />, path: '/users' },
   { text: 'Team', icon: <GroupsIcon />, path: '/team' },
   { text: 'Organizers', icon: <ManageAccountsIcon />, path: '/organizers' },
   { text: 'Forms', icon: <Assignment />, path: '/forms' },
   { text: 'Events', icon: <Event />, path: '/events' },
-   { text: 'Wall', icon: <Forum />, path: '/wall' },
+  { text: 'Wall', icon: <Forum />, path: '/wall' },
   { text: 'Blog', icon: <Article />, path: '/blogs' },
   { text: 'Blog categories', icon: <LabelOutlined />, path: '/blogs/categories' },
   // { text: 'Home Settings', icon: <Settings />, path: '/settings' },

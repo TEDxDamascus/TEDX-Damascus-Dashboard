@@ -72,7 +72,9 @@ function BlogCategory() {
       }
       navigate('/blogs/categories');
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Could not save category', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Could not save category', {
+        variant: 'error',
+      });
     }
   };
 

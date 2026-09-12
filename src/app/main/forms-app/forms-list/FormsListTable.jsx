@@ -8,6 +8,7 @@ import {
   Publish,
   UnpublishedOutlined,
   InboxOutlined,
+  HowToReg,
 } from '@mui/icons-material';
 import {
   useDeleteFormMutation,
@@ -94,7 +95,9 @@ function FormsListTable({ data, totalCount, isLoading }) {
       enqueueSnackbar('Form deleted successfully', { variant: 'success' });
       setDeleteItem(null);
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete form', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete form', {
+        variant: 'error',
+      });
     }
   };
 
@@ -116,7 +119,9 @@ function FormsListTable({ data, totalCount, isLoading }) {
       setPublishItem(null);
     } catch (error) {
       enqueueSnackbar(
-        error?.data?.message ?? error?.message ?? `Failed to ${publish ? 'publish' : 'unpublish'} form`,
+        error?.data?.message ??
+          error?.message ??
+          `Failed to ${publish ? 'publish' : 'unpublish'} form`,
         { variant: 'error' },
       );
     }
@@ -142,6 +147,13 @@ function FormsListTable({ data, totalCount, isLoading }) {
       label: 'Submissions',
       onClick: () => navigate(`/forms/${row.id}/submissions`),
     });
+    if (row.eventId) {
+      actions.push({
+        icon: <HowToReg style={{ fontSize: 18 }} />,
+        label: 'Attendance List',
+        onClick: () => navigate(`/forms/${row.id}/attendance`),
+      });
+    }
     if (canManage(row)) {
       actions.push(
         {

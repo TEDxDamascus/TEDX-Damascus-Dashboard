@@ -14,7 +14,11 @@ import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
 import EventModel from './models/events-model';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
-import { assignOptionalArray, assignOptionalString, getApiErrorMessage } from '../../../shared/apiError';
+import {
+  assignOptionalArray,
+  assignOptionalString,
+  getApiErrorMessage,
+} from '../../../shared/apiError';
 
 const localeObjectSchema = z.object({
   ar: z.string().optional(),
@@ -161,10 +165,9 @@ function Event() {
         enqueueSnackbar('Event updated successfully', { variant: 'success' });
       }
     } catch (error) {
-      enqueueSnackbar(
-        getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} event`),
-        { variant: 'error' },
-      );
+      enqueueSnackbar(getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} event`), {
+        variant: 'error',
+      });
     }
   };
 

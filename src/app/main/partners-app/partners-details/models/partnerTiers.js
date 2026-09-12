@@ -26,9 +26,7 @@ export const getFixedTier = (value) => {
   const normalizedValue = value?.trim().toLowerCase();
 
   return FIXED_TIERS.find(
-    (tier) =>
-      tier.value === normalizedValue ||
-      tier.label.toLowerCase() === normalizedValue
+    (tier) => tier.value === normalizedValue || tier.label.toLowerCase() === normalizedValue,
   );
 };
 

@@ -24,8 +24,7 @@ export function toDisplayImageUrl(raw) {
     // No media proxy configured (typical local .env gap): use the original URL.
     // Mixed-content rewrite is only needed on https pages.
     const hasMediaProxy = Boolean(import.meta.env.VITE_MEDIA_TARGET);
-    const pageIsHttps =
-      typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const pageIsHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (!hasMediaProxy && !pageIsHttps) return url;
     try {
       const { pathname, search, hash } = new URL(url);

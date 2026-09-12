@@ -135,9 +135,7 @@ function User() {
       reset(
         toFormValues(
           user,
-          user.role === 'admin'
-            ? permissionsFromArray(user.permissions || [], catalog)
-            : matrix,
+          user.role === 'admin' ? permissionsFromArray(user.permissions || [], catalog) : matrix,
         ),
       );
     }
@@ -187,9 +185,7 @@ function User() {
         }
 
         if (canManagePrivileges && !isOwnAccount && user && data.isActive !== user.isActive) {
-          tasks.push(
-            data.isActive ? enableUser(userId).unwrap() : disableUser(userId).unwrap(),
-          );
+          tasks.push(data.isActive ? enableUser(userId).unwrap() : disableUser(userId).unwrap());
         }
 
         await Promise.all(tasks);
@@ -197,7 +193,9 @@ function User() {
       }
       navigate(`/users?tab=${data.role || 'admin'}`);
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save user', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save user', {
+        variant: 'error',
+      });
     }
   };
 
@@ -255,9 +253,7 @@ function User() {
               )
             }
             onClick={handleSubmit(onSubmit, onInvalid)}
-            disabled={
-              isCreating || isUpdating || isSavingPermissions || (!isNew && !isDirty)
-            }
+            disabled={isCreating || isUpdating || isSavingPermissions || (!isNew && !isDirty)}
             sx={{
               backgroundColor: 'var(--color-primary)',
               '&:hover': { backgroundColor: 'var(--color-primary-dark)' },

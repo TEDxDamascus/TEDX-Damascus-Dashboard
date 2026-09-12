@@ -40,13 +40,21 @@ function ContentFontSelect({ value, onChange, options, label, disabled, error, h
       <InputLabel>{label}</InputLabel>
       <Select label={label} value={value || ''} onChange={(e) => onChange(e.target.value)}>
         {options.map((opt) => (
-          <MenuItem key={opt.value} value={opt.value} sx={{ fontFamily: blogFontValueToCssFamily(opt.value) }}>
+          <MenuItem
+            key={opt.value}
+            value={opt.value}
+            sx={{ fontFamily: blogFontValueToCssFamily(opt.value) }}
+          >
             {opt.label}
           </MenuItem>
         ))}
       </Select>
       {helperText && (
-        <Typography variant="caption" color={error ? 'error' : 'text.secondary'} sx={{ mt: 0.5, mx: 1.75 }}>
+        <Typography
+          variant="caption"
+          color={error ? 'error' : 'text.secondary'}
+          sx={{ mt: 0.5, mx: 1.75 }}
+        >
           {helperText}
         </Typography>
       )}
@@ -546,9 +554,7 @@ function BlogContentSeoTab({
                         <ContentFontSelect
                           label="Content font (English)"
                           value={fontLocale.en || defaultFont}
-                          onChange={(val) =>
-                            fontField.onChange({ ...fontLocale, en: val })
-                          }
+                          onChange={(val) => fontField.onChange({ ...fontLocale, en: val })}
                           options={fontOptions}
                           disabled={fontsLoading || !fontOptions.length}
                         />
@@ -568,9 +574,7 @@ function BlogContentSeoTab({
                         <ContentFontSelect
                           label="Content font (Arabic)"
                           value={fontLocale.ar || defaultFont}
-                          onChange={(val) =>
-                            fontField.onChange({ ...fontLocale, ar: val })
-                          }
+                          onChange={(val) => fontField.onChange({ ...fontLocale, ar: val })}
                           options={fontOptions}
                           disabled={fontsLoading || !fontOptions.length}
                         />

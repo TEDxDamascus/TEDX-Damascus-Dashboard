@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import * as XLSX from 'xlsx';
@@ -10,6 +10,7 @@ import {
   Close,
   CheckBox,
   CheckBoxOutlineBlank,
+  HowToReg,
 } from '@mui/icons-material';
 import {
   Dialog,
@@ -30,6 +31,7 @@ import {
   useLazyGetFormSubmissionsQuery,
   useExportSubmissionPdfMutation,
 } from '../FormsApi';
+import { useAddToAttendanceFromSubmissionsMutation } from '../AttendanceApi';
 import { useTableState } from '../../../shared-components/custom-table';
 import CustomTable from '../../../shared-components/custom-table';
 import StatusBadge from '../../../shared-components/status-badge';
@@ -114,7 +116,12 @@ function ExportPdfDialog({ open, onClose, questions, submission, formId }) {
   async function handleExport() {
     const result = await exportPdf({
       formId,
-      body: { userId: submission.userId, submissionId: submission.id, questionIds: [...selected], locale },
+      body: {
+        userId: submission.userId,
+        submissionId: submission.id,
+        questionIds: [...selected],
+        locale,
+      },
     });
     if (result.data) {
       const blob = new Blob([result.data], { type: 'application/pdf' });
@@ -222,10 +229,15 @@ export default function FormSubmissions() {
   const { enqueueSnackbar } = useSnackbar();
   const [exportTarget, setExportTarget] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const { data: formResponse } = useGetFormQuery(formId);
   const form = formResponse?.data;
   const formName = resolveLabel(form?.name) || 'Form';
+  const eventId = form?.eventId;
+
+  const [addToAttendance, { isLoading: isAddingToAttendance }] =
+    useAddToAttendanceFromSubmissionsMutation();
 
   const allQuestions = [...(form?.questions ?? [])].sort((a, b) => a.orderIndex - b.orderIndex);
   const displayQuestions = allQuestions.filter((q) => q.type !== 'section');
@@ -244,6 +256,33 @@ export default function FormSubmissions() {
 
   const submissions = (data?.data?.items ?? []).map(mapSubmission);
   const totalCount = data?.data?.total ?? submissions.length;
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [params.page, formId]);
+
+  async function handleAddToAttendance() {
+    if (!eventId) {
+      enqueueSnackbar('This form is not linked to an event.', { variant: 'warning' });
+      return;
+    }
+    try {
+      const result = await addToAttendance({ eventId, submissionIds: selectedIds }).unwrap();
+      const created = result?.data?.created?.length ?? 0;
+      const failed = result?.data?.failures?.length ?? 0;
+      enqueueSnackbar(
+        failed > 0
+          ? `Added ${created} to the attendance list, ${failed} failed.`
+          : `Added ${created} to the attendance list.`,
+        { variant: failed > 0 ? 'warning' : 'success' },
+      );
+      setSelectedIds([]);
+    } catch (err) {
+      enqueueSnackbar(err?.data?.message ?? err?.message ?? 'Failed to add to attendance list', {
+        variant: 'error',
+      });
+    }
+  }
 
   async function handleExportExcel() {
     setIsExporting(true);
@@ -310,6 +349,25 @@ export default function FormSubmissions() {
   }
 
   const COLUMNS = [
+    {
+      id: 'select',
+      header: '',
+      sortable: false,
+      headerClassName: 'w-12',
+      renderCell: (_, row, { selectedIds: sel, onSelectChange }) => (
+        <Checkbox
+          size="small"
+          checked={sel.includes(row.id)}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            const checked = e.target.checked;
+            onSelectChange((prev) =>
+              checked ? [...prev, row.id] : prev.filter((x) => x !== row.id),
+            );
+          }}
+        />
+      ),
+    },
     ...colQuestions.map((q) => ({
       id: `answer_${q.id}`,
       header: resolveLabel(q.title),
@@ -341,6 +399,18 @@ export default function FormSubmissions() {
       ),
     },
   ];
+
+  const bulkActions =
+    selectedIds.length > 0
+      ? [
+          {
+            icon: <HowToReg style={{ fontSize: 16 }} />,
+            label: `Add to Attendance (${selectedIds.length})`,
+            onClick: handleAddToAttendance,
+            disabled: isAddingToAttendance || !eventId,
+          },
+        ]
+      : [];
 
   const rowActions = (row) => [
     {
@@ -376,6 +446,15 @@ export default function FormSubmissions() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {eventId && (
+            <button
+              onClick={() => navigate(`/forms/${formId}/attendance`)}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
+            >
+              <HowToReg style={{ fontSize: 16 }} />
+              Attendance List
+            </button>
+          )}
           {totalCount > 0 && (
             <button
               onClick={handleExportExcel}
@@ -402,9 +481,12 @@ export default function FormSubmissions() {
         totalCount={totalCount}
         isLoading={isLoading}
         rowActions={rowActions}
+        bulkActions={bulkActions}
+        selectedIds={selectedIds}
+        onSelectChange={setSelectedIds}
         emptyMessage={
           isError
-            ? error?.data?.message ?? error?.message ?? 'Failed to load submissions.'
+            ? (error?.data?.message ?? error?.message ?? 'Failed to load submissions.')
             : 'No submissions yet for this form.'
         }
       />

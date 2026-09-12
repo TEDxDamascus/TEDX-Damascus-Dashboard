@@ -1,5 +1,15 @@
 import { Controller } from 'react-hook-form';
-import { TextField, Grid, Box, FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput } from '@mui/material';
+import {
+  TextField,
+  Grid,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  OutlinedInput,
+} from '@mui/material';
 import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
 import { ImagePickerField } from '../../../../shared-components/image-picker';
 
@@ -95,9 +105,7 @@ function BasicInfoTab({ control, errors, events = [], isLoadingEvents }) {
                 placeholder="e.g. Organizer, Volunteer"
                 error={!!errors.role}
                 helperText={
-                  errors.role?.message ||
-                  errors.role?.en?.message ||
-                  errors.role?.ar?.message
+                  errors.role?.message || errors.role?.en?.message || errors.role?.ar?.message
                 }
               />
             )}
@@ -130,7 +138,10 @@ function BasicInfoTab({ control, errors, events = [], isLoadingEvents }) {
             name="events"
             control={control}
             render={({ field: { value, onChange, onBlur } }) => (
-              <FormControl fullWidth error={Boolean(errors.events?.message || errors.events?.root?.message)}>
+              <FormControl
+                fullWidth
+                error={Boolean(errors.events?.message || errors.events?.root?.message)}
+              >
                 <InputLabel id="team-member-events-label" shrink>
                   Events
                 </InputLabel>
@@ -162,11 +173,7 @@ function BasicInfoTab({ control, errors, events = [], isLoadingEvents }) {
                     )
                   }
                 >
-                  {isLoadingEvents && (
-                    <MenuItem disabled>
-                      Loading events...
-                    </MenuItem>
-                  )}
+                  {isLoadingEvents && <MenuItem disabled>Loading events...</MenuItem>}
                   {events.map((event) => (
                     <MenuItem key={event.id} value={event.id}>
                       {event.title?.en || event.title?.ar || event.id}

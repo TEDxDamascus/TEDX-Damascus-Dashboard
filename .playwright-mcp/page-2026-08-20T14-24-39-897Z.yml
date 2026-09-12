@@ -1,0 +1,145 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - region "TEDxDamascus" [ref=e3]:
+      - generic [ref=e4]:
+        - link "TEDxDamascus Damascus x = independently organized TED event" [ref=e6] [cursor=pointer]:
+          - /url: /en/home/
+          - img "TEDxDamascus" [ref=e7]
+          - generic [ref=e8]: Damascus
+          - generic [ref=e9]: x
+          - generic [ref=e10]: = independently organized TED event
+        - button "Open menu" [ref=e12] [cursor=pointer]
+      - generic [ref=e29]:
+        - heading "WE ARE" [level=1] [ref=e30]
+        - img "TEDx" [ref=e33]
+        - generic [ref=e34]: Damascus
+      - img [ref=e38]:
+        - generic [ref=e39]: Damascus where the story is told anew ... ·
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - heading "Events" [level=2] [ref=e46]
+        - paragraph [ref=e47]: Discover TEDx Damascus events and be part of conversations that inspire change.
+      - generic [ref=e50]:
+        - img "TEDx Damascus 2026" [ref=e52]
+        - generic [ref=e53]:
+          - generic [ref=e54]: TEDx Damascus 2026
+          - generic [ref=e55]: Sep 2026
+        - paragraph [ref=e56]: "Damascus: where the story is told anew"
+        - link "view details" [ref=e57] [cursor=pointer]:
+          - /url: /en/events/tedx-damascus-2026/
+      - link "See all events" [ref=e61] [cursor=pointer]:
+        - /url: /en/events/
+    - generic [ref=e64]:
+      - paragraph [ref=e66]:
+        - generic [ref=e67]: Call
+        - generic [ref=e68]: for
+        - generic [ref=e69]: voices
+      - generic [ref=e70]:
+        - generic [ref=e74]:
+          - paragraph [ref=e75]: Know someone forour stage?
+          - link "NOMINATE A SPEAKER" [ref=e77] [cursor=pointer]:
+            - /url: https://forms.gle/bQhuvrwVWSp1k72AA
+        - generic [ref=e83]:
+          - paragraph [ref=e84]: Interested in beinga speaker?
+          - link "APPLY AS A SPEAKER" [ref=e86] [cursor=pointer]:
+            - /url: https://forms.gle/bQhuvrwVWSp1k72AA
+    - region "Ideas grow through the people who believe in them" [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]: Ideas
+            - generic [ref=e95]: grow
+          - paragraph [ref=e96]: through the people who believe in them
+        - generic [ref=e97]:
+          - link "Team" [ref=e98] [cursor=pointer]:
+            - /url: /en/team/
+            - paragraph [ref=e100]: Team
+          - link "Organizers" [ref=e101] [cursor=pointer]:
+            - /url: /en/organizers/
+            - paragraph [ref=e103]: Organizers
+          - link "Speakers" [ref=e104] [cursor=pointer]:
+            - /url: /en/speakers/
+            - paragraph [ref=e106]: Speakers
+          - link "Partners" [ref=e107] [cursor=pointer]:
+            - /url: /en/partners/
+            - paragraph [ref=e109]: Partners
+    - generic [ref=e110]:
+      - generic [ref=e112]:
+        - generic:
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+          - generic: "?"
+        - heading "What idea rising from Damascus should reach the world ?" [level=2] [ref=e113]
+        - generic [ref=e114]:
+          - textbox "Share your idea..." [ref=e116]
+          - button "Submit" [ref=e117] [cursor=pointer]
+      - link "View All Answers" [ref=e118] [cursor=pointer]:
+        - /url: /en/wall/questions/
+    - region [ref=e122]:
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - heading "About" [level=2] [ref=e126]
+          - img "TEDx" [ref=e129]
+        - paragraph [ref=e131]: In the spirit of discovering and spreading ideas, TED has created a program called TEDx. TEDx is a program of local, self-organized events that bring people together to share a TED-like experience. Our event is called TEDxDamascus where x = independently organized TED event. At our TEDxDamascus event, TED Talks video and live speakers will combine to spark deep discussion and connection in a small group. The TED Conference provides general guidance for the TEDx program, but individual TEDx events, including ours, are self-organized.
+    - generic "Site footer" [ref=e132]:
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - paragraph [ref=e136]: "Damascus: where the story is told anew. Subscribe and let the next chapter find you."
+          - generic [ref=e137]:
+            - generic [ref=e138]: Your email address
+            - textbox "Your email address" [ref=e139]
+            - button "Subscribe" [ref=e140] [cursor=pointer]
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - generic [ref=e145]:
+                - img "TEDx" [ref=e146]
+                - img "Damascus" [ref=e147]
+              - paragraph [ref=e148]: This independent TEDx event is operated under license from TED
+            - generic [ref=e149]:
+              - link "Facebook" [ref=e150] [cursor=pointer]:
+                - /url: https://www.facebook.com/TEDxDamascus
+              - link "Instagram" [ref=e152] [cursor=pointer]:
+                - /url: https://www.instagram.com/TEDxDamascus
+              - link "LinkedIn" [ref=e154] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/TEDxDamascus
+          - generic [ref=e156]:
+            - navigation "About links" [ref=e157]:
+              - list [ref=e158]:
+                - listitem [ref=e159]:
+                  - link "About us" [ref=e160] [cursor=pointer]:
+                    - /url: /en/about/
+                - listitem [ref=e161]:
+                  - link "Team" [ref=e162] [cursor=pointer]:
+                    - /url: /en/team/
+                - listitem [ref=e163]:
+                  - link "Partners" [ref=e164] [cursor=pointer]:
+                    - /url: /en/partners/
+            - navigation "Explore links" [ref=e165]:
+              - list [ref=e166]:
+                - listitem [ref=e167]:
+                  - link "Home" [ref=e168] [cursor=pointer]:
+                    - /url: /en/home/
+                - listitem [ref=e169]:
+                  - link "Events" [ref=e170] [cursor=pointer]:
+                    - /url: /en/events/
+                - listitem [ref=e171]:
+                  - link "Speakers" [ref=e172] [cursor=pointer]:
+                    - /url: /en/speakers/
+                - listitem [ref=e173]:
+                  - link "Blog" [ref=e174] [cursor=pointer]:
+                    - /url: /en/blog/
+  - button "Open Next.js Dev Tools" [ref=e182] [cursor=pointer]

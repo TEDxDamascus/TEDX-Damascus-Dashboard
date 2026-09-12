@@ -89,9 +89,7 @@ const partnerSchema = z.object({
   short_description: translationDtoSchema('Short description'),
   long_description: translationDtoSchema('Long description'),
 
-  social_links: z
-    .array(z.string().min(1, 'Link cannot be empty'))
-    .optional(),
+  social_links: z.array(z.string().min(1, 'Link cannot be empty')).optional(),
 
   contact_info: z
     .object({
@@ -230,130 +228,128 @@ function Partner() {
     }
   }, [partner, isNew, reset]);
 
- const onSubmit = async (formData) => {
-  try {
-    const cleanedSocialLinks = (formData.social_links || [])
-      .map((link) => (typeof link === 'string' ? link.trim() : ''))
-      .filter((link) => link !== '');
+  const onSubmit = async (formData) => {
+    try {
+      const cleanedSocialLinks = (formData.social_links || [])
+        .map((link) => (typeof link === 'string' ? link.trim() : ''))
+        .filter((link) => link !== '');
 
-    // =========================
-    // CLEAN CONTACT INFO
-    // =========================
+      // =========================
+      // CLEAN CONTACT INFO
+      // =========================
 
-    const email = formData.contact_info?.email?.trim() || '';
-    const phone = formData.contact_info?.phone?.trim() || '';
-    const addressEn = formData.contact_info?.address?.en?.trim() || '';
-    const addressAr = formData.contact_info?.address?.ar?.trim() || '';
+      const email = formData.contact_info?.email?.trim() || '';
+      const phone = formData.contact_info?.phone?.trim() || '';
+      const addressEn = formData.contact_info?.address?.en?.trim() || '';
+      const addressAr = formData.contact_info?.address?.ar?.trim() || '';
 
-    const hasAddress = !!addressEn || !!addressAr;
-    const hasContactInfo = !!email || !!phone || hasAddress;
+      const hasAddress = !!addressEn || !!addressAr;
+      const hasContactInfo = !!email || !!phone || hasAddress;
 
-    let cleanedContactInfo;
-    if (hasContactInfo) {
-      cleanedContactInfo = {};
-      assignOptionalString(cleanedContactInfo, 'email', email, !isNew);
-      assignOptionalString(cleanedContactInfo, 'phone', phone, !isNew);
-      assignOptionalLocale(
-        cleanedContactInfo,
-        'address',
-        { en: addressEn, ar: addressAr },
-        !isNew,
-        false,
+      let cleanedContactInfo;
+      if (hasContactInfo) {
+        cleanedContactInfo = {};
+        assignOptionalString(cleanedContactInfo, 'email', email, !isNew);
+        assignOptionalString(cleanedContactInfo, 'phone', phone, !isNew);
+        assignOptionalLocale(
+          cleanedContactInfo,
+          'address',
+          { en: addressEn, ar: addressAr },
+          !isNew,
+          false,
+        );
+      }
+
+      // =========================
+      // CLEAN SERVICES
+      // =========================
+
+      const cleanedServices = (formData.services || []).filter(
+        (s) =>
+          s.title?.en?.trim() ||
+          s.title?.ar?.trim() ||
+          s.description?.en?.trim() ||
+          s.description?.ar?.trim(),
+      );
+
+      // =========================
+      // PARTNER TIER
+      // =========================
+
+      const rawType = formData.partner_ship_type || '';
+      const fixedTier = getFixedTier(rawType);
+
+      const tierEnumMap = {
+        diamond: 'Diamond',
+        platinum: 'Platinum',
+        gold: 'Gold',
+        silver: 'Silver',
+      };
+
+      const tierType = fixedTier ? tierEnumMap[fixedTier.value] || 'Other' : 'Other';
+
+      // =========================
+      // PAYLOAD
+      // =========================
+
+      const payload = {
+        name: formData.name,
+        slug: formData.slug,
+
+        image: formData.image || undefined,
+
+        tier: {
+          type: tierType,
+          name: rawType,
+          size: formData.custom_card_size || undefined,
+        },
+
+        partner_ship_type: rawType,
+        custom_card_size: formData.custom_card_size || undefined,
+
+        year: formData.year,
+
+        short_description: formData.short_description,
+        long_description: formData.long_description,
+      };
+
+      assignOptionalObject(payload, 'contact_info', cleanedContactInfo, !isNew);
+      assignOptionalArray(payload, 'social_links', cleanedSocialLinks, !isNew);
+      assignOptionalArray(payload, 'services', cleanedServices, !isNew);
+
+      // =========================
+      // CREATE / UPDATE
+      // =========================
+
+      if (isNew) {
+        await createPartner(payload).unwrap();
+
+        enqueueSnackbar('Partner created successfully', {
+          variant: 'success',
+        });
+      } else {
+        await updatePartner({
+          id: partnerId,
+          data: payload,
+        }).unwrap();
+
+        enqueueSnackbar('Partner updated successfully', {
+          variant: 'success',
+        });
+      }
+
+      navigate('/partners');
+    } catch (error) {
+      console.error('Save failed:', error);
+
+      enqueueSnackbar(
+        getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} partner`),
+        {
+          variant: 'error',
+        },
       );
     }
-
-    // =========================
-    // CLEAN SERVICES
-    // =========================
-
-    const cleanedServices = (formData.services || []).filter(
-      (s) =>
-        s.title?.en?.trim() ||
-        s.title?.ar?.trim() ||
-        s.description?.en?.trim() ||
-        s.description?.ar?.trim(),
-    );
-
-    // =========================
-    // PARTNER TIER
-    // =========================
-
-    const rawType = formData.partner_ship_type || '';
-    const fixedTier = getFixedTier(rawType);
-
-    const tierEnumMap = {
-      diamond: 'Diamond',
-      platinum: 'Platinum',
-      gold: 'Gold',
-      silver: 'Silver',
-    };
-
-    const tierType = fixedTier
-      ? tierEnumMap[fixedTier.value] || 'Other'
-      : 'Other';
-
-    // =========================
-    // PAYLOAD
-    // =========================
-
-    const payload = {
-      name: formData.name,
-      slug: formData.slug,
-
-      image: formData.image || undefined,
-
-      tier: {
-        type: tierType,
-        name: rawType,
-        size: formData.custom_card_size || undefined,
-      },
-
-      partner_ship_type: rawType,
-      custom_card_size: formData.custom_card_size || undefined,
-
-      year: formData.year,
-
-      short_description: formData.short_description,
-      long_description: formData.long_description,
-    };
-
-    assignOptionalObject(payload, 'contact_info', cleanedContactInfo, !isNew);
-    assignOptionalArray(payload, 'social_links', cleanedSocialLinks, !isNew);
-    assignOptionalArray(payload, 'services', cleanedServices, !isNew);
-
-    // =========================
-    // CREATE / UPDATE
-    // =========================
-
-    if (isNew) {
-      await createPartner(payload).unwrap();
-
-      enqueueSnackbar('Partner created successfully', {
-        variant: 'success',
-      });
-    } else {
-      await updatePartner({
-        id: partnerId,
-        data: payload,
-      }).unwrap();
-
-      enqueueSnackbar('Partner updated successfully', {
-        variant: 'success',
-      });
-    }
-
-    navigate('/partners');
-  } catch (error) {
-    console.error('Save failed:', error);
-
-    enqueueSnackbar(
-      getApiErrorMessage(error, `Failed to ${isNew ? 'create' : 'update'} partner`),
-      {
-        variant: 'error',
-      },
-    );
-  }
-};
+  };
 
   const onInvalid = (formErrors) => {
     enqueueSnackbar('Please fix the highlighted fields before saving', { variant: 'error' });

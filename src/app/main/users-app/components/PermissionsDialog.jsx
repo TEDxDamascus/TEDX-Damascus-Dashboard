@@ -29,9 +29,12 @@ const ACTION_LABELS = { create: 'Create', read: 'Read', update: 'Update', delete
 function PermissionsDialog({ open, user, onClose }) {
   const { enqueueSnackbar } = useSnackbar();
   const userId = user?.id;
-  const { data: catalog, isLoading: isLoadingCatalog } = useGetAvailablePermissionsQuery(undefined, {
-    skip: !open,
-  });
+  const { data: catalog, isLoading: isLoadingCatalog } = useGetAvailablePermissionsQuery(
+    undefined,
+    {
+      skip: !open,
+    },
+  );
   const { data: currentPermissions, isLoading: isLoadingPerms } = useGetUserPermissionsQuery(
     userId,
     { skip: !open || !userId },
@@ -69,7 +72,9 @@ function PermissionsDialog({ open, user, onClose }) {
       enqueueSnackbar('Permissions updated successfully', { variant: 'success' });
       onClose();
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update permissions', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update permissions', {
+        variant: 'error',
+      });
     }
   };
 

@@ -41,14 +41,12 @@ const optionalUrl = z
 
 const speakerSchema = z.object({
   name: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Name is required'),
-  slug: localeObjectSchema
-    .optional()
-    .refine((v) => {
-      const en = v?.en?.trim();
-      const ar = v?.ar?.trim();
-      if (!en && !ar) return true;
-      return Boolean(en && ar);
-    }, 'Slug must include both English and Arabic'),
+  slug: localeObjectSchema.optional().refine((v) => {
+    const en = v?.en?.trim();
+    const ar = v?.ar?.trim();
+    if (!en && !ar) return true;
+    return Boolean(en && ar);
+  }, 'Slug must include both English and Arabic'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   bio: localeObjectSchema.optional(),

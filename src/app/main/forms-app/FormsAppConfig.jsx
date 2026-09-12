@@ -4,6 +4,7 @@ const FormsList = lazy(() => import('./forms-list/FormsList'));
 const FormBuilder = lazy(() => import('./form-builder/FormBuilder'));
 const FormSubmissions = lazy(() => import('./form-submissions/FormSubmissions'));
 const FormSubmissionDetail = lazy(() => import('./form-submissions/FormSubmissionDetail'));
+const AttendanceList = lazy(() => import('./attendance/AttendanceList'));
 
 const FormsAppConfig = {
   routes: [
@@ -25,6 +26,10 @@ const FormsAppConfig = {
         {
           path: ':formId/submissions/:submissionId',
           element: <FormSubmissionDetail />,
+        },
+        {
+          path: ':formId/attendance',
+          element: <AttendanceList />,
         },
       ],
     },

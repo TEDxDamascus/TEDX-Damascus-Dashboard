@@ -68,7 +68,14 @@ export default function LocaleInput({
         </Grid>
       </Grid>
       {helperText && (
-        <Box sx={{ color: error ? 'error.main' : 'text.secondary', fontSize: '0.75rem', mt: 0.5, mx: 1.5 }}>
+        <Box
+          sx={{
+            color: error ? 'error.main' : 'text.secondary',
+            fontSize: '0.75rem',
+            mt: 0.5,
+            mx: 1.5,
+          }}
+        >
           {helperText}
         </Box>
       )}

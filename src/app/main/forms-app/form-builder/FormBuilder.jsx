@@ -8,6 +8,7 @@ import ConfirmModal from '../../../shared-components/confirm-modal';
 import { useFormBuilder } from './useFormBuilder';
 import FormSettings from './FormSettings';
 import QuestionList from './QuestionList';
+import { useGetEventsQuery } from '../../events-app/EventsApi';
 
 export default function FormBuilder() {
   const { formId } = useParams();
@@ -34,6 +35,9 @@ export default function FormBuilder() {
     isPublishing,
     isUnpublishing,
   } = useFormBuilder(formId);
+
+  const { data: eventsData, isLoading: isLoadingEvents } = useGetEventsQuery({ pageSize: 100 });
+  const events = eventsData?.items ?? [];
 
   if (!isNew && isFormLoading) {
     return (
@@ -147,6 +151,8 @@ export default function FormBuilder() {
                   ? form.shareable_url
                   : form?.shareable_url?.en || form?.shareable_url?.ar || ''
               }
+              events={events}
+              isLoadingEvents={isLoadingEvents}
             />
           )}
           {tab === 1 && !isNew && (

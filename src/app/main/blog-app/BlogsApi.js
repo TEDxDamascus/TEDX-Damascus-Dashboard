@@ -2,7 +2,14 @@ import { apiService } from 'app/store/apiService';
 import axiosInstance from '../../services/axiosInstance';
 import { authorOptionsFromApi } from './blog-detail/blogAuthorUtils';
 
-export const addTagTypes = ['Blogs', 'Blog', 'BlogReferences', 'BlogReference', 'BlogFonts', 'BlogAuthorOptions'];
+export const addTagTypes = [
+  'Blogs',
+  'Blog',
+  'BlogReferences',
+  'BlogReference',
+  'BlogFonts',
+  'BlogAuthorOptions',
+];
 
 function matchBlogId(blog, id) {
   return String(blog.id) === String(id) || String(blog._id) === String(id);
@@ -83,7 +90,9 @@ export async function searchBlogAuthorOptions(query) {
     const { data: body } = await axiosInstance({ url: '/blogs/author-options', method: 'get' });
     const rawItems = Array.isArray(body?.data) ? body.data : [];
 
-    const term = String(query || '').trim().toLowerCase();
+    const term = String(query || '')
+      .trim()
+      .toLowerCase();
 
     const items = rawItems
       .map((item) => {
@@ -92,7 +101,9 @@ export async function searchBlogAuthorOptions(query) {
         // name may be null — fallback to email, username, then id
         const label =
           (typeof item.name === 'string' ? item.name.trim() : '') ||
-          (item.name?.en || item.name?.ar || '') ||
+          item.name?.en ||
+          item.name?.ar ||
+          '' ||
           (typeof item.email === 'string' ? item.email.trim() : '') ||
           (typeof item.username === 'string' ? item.username.trim() : '') ||
           id;

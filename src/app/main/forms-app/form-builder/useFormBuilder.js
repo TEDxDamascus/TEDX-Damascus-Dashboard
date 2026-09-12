@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = {
   name: { en: '', ar: '' },
   description: { en: '', ar: '' },
   targetRole: 'Speaker',
+  eventId: '',
   starts_at: '',
   ends_at: '',
   expires_at: '',
@@ -49,6 +50,7 @@ export function useFormBuilder(formId) {
         name: form.name ?? { en: '', ar: '' },
         description: form.description ?? { en: '', ar: '' },
         targetRole: form.targetRole ?? 'Speaker',
+        eventId: form.eventId ?? '',
         starts_at: form.starts_at ? form.starts_at.slice(0, 16) : '',
         ends_at: form.ends_at ? form.ends_at.slice(0, 16) : '',
         expires_at: form.expires_at ? form.expires_at.slice(0, 16) : '',
@@ -79,17 +81,20 @@ export function useFormBuilder(formId) {
   const [unpublishFormMutation, { isLoading: isUnpublishing }] = useUnpublishFormMutation();
 
   const saveSettings = settingsForm.handleSubmit(async (values) => {
+    const payload = { ...values, eventId: values.eventId || undefined };
     try {
       if (isNew) {
-        const res = await createForm(values).unwrap();
+        const res = await createForm(payload).unwrap();
         enqueueSnackbar('Form created', { variant: 'success' });
         navigate(`/forms/${res.data.id}`, { replace: true });
       } else {
-        await updateForm({ id: formId, data: values }).unwrap();
+        await updateForm({ id: formId, data: payload }).unwrap();
         enqueueSnackbar('Settings saved', { variant: 'success' });
       }
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save settings', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save settings', {
+        variant: 'error',
+      });
     }
   });
 
@@ -108,7 +113,9 @@ export function useFormBuilder(formId) {
       }).unwrap();
     } catch (error) {
       setLastAddedIndex(null);
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to add question', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to add question', {
+        variant: 'error',
+      });
     }
   };
 
@@ -116,7 +123,9 @@ export function useFormBuilder(formId) {
     try {
       await updateQuestionMutation({ formId, questionId, data: preparePayload(data) }).unwrap();
     } catch (err) {
-      enqueueSnackbar(err?.data?.message ?? err?.message ?? 'Failed to update question', { variant: 'error' });
+      enqueueSnackbar(err?.data?.message ?? err?.message ?? 'Failed to update question', {
+        variant: 'error',
+      });
       throw err; // re-throw so QuestionCard can stay dirty on failure
     }
   };
@@ -125,7 +134,9 @@ export function useFormBuilder(formId) {
     try {
       await removeQuestionMutation({ formId, questionId }).unwrap();
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to remove question', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to remove question', {
+        variant: 'error',
+      });
     }
   };
 
@@ -134,7 +145,9 @@ export function useFormBuilder(formId) {
       await publishFormMutation(formId).unwrap();
       enqueueSnackbar('Form published', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to publish form', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to publish form', {
+        variant: 'error',
+      });
     }
   };
 
@@ -143,7 +156,9 @@ export function useFormBuilder(formId) {
       await unpublishFormMutation(formId).unwrap();
       enqueueSnackbar('Form unpublished', { variant: 'info' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to unpublish form', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to unpublish form', {
+        variant: 'error',
+      });
     }
   };
 
