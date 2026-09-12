@@ -52,10 +52,13 @@ export function toAuthorDescriptionApi(value) {
 export function sourceHasAuthor(source) {
   if (!source || typeof source !== 'object') return false;
   const nested = source.author && typeof source.author === 'object' ? source.author : null;
-  const type = String(source.author_type || nested?.type || nested?.author_type || '').toLowerCase();
+  const type = String(
+    source.author_type || nested?.type || nested?.author_type || '',
+  ).toLowerCase();
   if (type === 'no_author') return false;
   if (type === 'admin' || type === 'external' || type === 'custom') return true;
-  const userId = source.author_user_id ?? source.user_id ?? source.author_admin?.id ?? nested?.user_id;
+  const userId =
+    source.author_user_id ?? source.user_id ?? source.author_admin?.id ?? nested?.user_id;
   if (userId) return true;
   const name = source.author_name ?? nested?.name;
   if (typeof name === 'string' && name.trim()) return true;
@@ -100,7 +103,10 @@ export function mapAuthorFromApi(source) {
       ? String(userId)
       : null;
 
-  if (authorType === 'no_author' || (!authorType && !userIdStr && !source?.author_name && !nestedAuthor?.name)) {
+  if (
+    authorType === 'no_author' ||
+    (!authorType && !userIdStr && !source?.author_name && !nestedAuthor?.name)
+  ) {
     return {
       author_type: 'no_author',
       author_admin: null,
@@ -111,12 +117,16 @@ export function mapAuthorFromApi(source) {
     };
   }
 
-  if (authorType === 'external' || authorType === 'custom' || (!userIdStr && (source?.author_name || nestedAuthor?.name))) {
+  if (
+    authorType === 'external' ||
+    authorType === 'custom' ||
+    (!userIdStr && (source?.author_name || nestedAuthor?.name))
+  ) {
     // API nests the image inside source.author.image — also check flat variants
     const rawImage =
       source.author_image ??
       source.author_photo ??
-      nestedAuthor?.image ??    // ← source.author.image (الشكل الحقيقي للـ API)
+      nestedAuthor?.image ?? // ← source.author.image (الشكل الحقيقي للـ API)
       source.photo ??
       source.image ??
       source.avatar ??
@@ -168,14 +178,8 @@ export function mapAuthorFromApi(source) {
     }
 
     const nestedAuthor = source.author && typeof source.author === 'object' ? source.author : null;
-    const rawImage =
-      source.author_image ??
-      nestedAuthor?.image ??
-      null;
-    const rawImageUrl =
-      source.author_image_url ??
-      nestedAuthor?.image_url ??
-      null;
+    const rawImage = source.author_image ?? nestedAuthor?.image ?? null;
+    const rawImageUrl = source.author_image_url ?? nestedAuthor?.image_url ?? null;
 
     return {
       author_type: 'external',
@@ -183,10 +187,7 @@ export function mapAuthorFromApi(source) {
       author_name: authorName,
       author_description: extractAuthorDescription(source),
       author_image: normalizeMediaFormValue(rawImage ?? rawImageUrl),
-      author_image_url:
-        typeof rawImageUrl === 'string'
-          ? rawImageUrl.trim()
-          : '',
+      author_image_url: typeof rawImageUrl === 'string' ? rawImageUrl.trim() : '',
     };
   }
 

@@ -1,8 +1,6 @@
 import BlogModel from './models/BlogModel';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
-import {
-  normalizeMediaFormValue,
-} from '../../../shared-components/image-picker';
+import { normalizeMediaFormValue } from '../../../shared-components/image-picker';
 import { ensureContentFont } from './blogFontUtils';
 import { mapAuthorFromApi } from './blogAuthorUtils';
 
@@ -117,15 +115,6 @@ function pickMetaKeywords(primary, seoFallback) {
     return fromPrimary;
   if (seoFallback != null) return metaKeywordsFromApi(seoFallback);
   return fromPrimary;
-}
-
-function normalizeIdRef(raw) {
-  if (raw == null || raw === '') return null;
-  if (typeof raw === 'object' && !Array.isArray(raw) && (raw._id != null || raw.id != null)) {
-    return String(raw._id ?? raw.id);
-  }
-  if (typeof raw === 'string' || typeof raw === 'number') return String(raw);
-  return null;
 }
 
 export function mapBlogReferenceApiItemToForm(item) {

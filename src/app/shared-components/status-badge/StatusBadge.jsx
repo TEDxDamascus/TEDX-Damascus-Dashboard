@@ -7,6 +7,9 @@ const STATUS_MAP = {
   disabled: { label: 'Disabled', className: 'bg-red-100 text-red-600 border-red-200' },
   pending: { label: 'Pending', className: 'bg-blue-100 text-blue-600 border-blue-200' },
   featured: { label: 'Featured', className: 'bg-purple-100 text-purple-700 border-purple-200' },
+  accepted: { label: 'Accepted', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  invited: { label: 'Invited', className: 'bg-blue-100 text-blue-600 border-blue-200' },
+  rejected: { label: 'Rejected', className: 'bg-red-100 text-red-600 border-red-200' },
 };
 
 export default function StatusBadge({ status, label: overrideLabel, className: extra = '' }) {

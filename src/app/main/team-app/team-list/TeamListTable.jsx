@@ -83,7 +83,9 @@ function TeamListTable({ data, totalCount, isLoading }) {
       enqueueSnackbar('Member deleted successfully', { variant: 'success' });
       setConfirmItem(null);
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete member', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to delete member', {
+        variant: 'error',
+      });
     }
   };
 

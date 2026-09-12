@@ -368,7 +368,10 @@ export default function CustomTable({
                           {actions.map((action, i) => (
                             <button
                               key={i}
-                              onClick={(e) => { e.stopPropagation(); action.onClick?.(e); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                action.onClick?.(e);
+                              }}
                               title={action.title || action.label}
                               disabled={action.disabled}
                               className={[

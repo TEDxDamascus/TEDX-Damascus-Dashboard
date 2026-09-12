@@ -21,7 +21,7 @@ export function updateSelectedImageAttrs(editor, attrs) {
     editor.state.tr.setNodeMarkup(pos, undefined, {
       ...node.attrs,
       ...attrs,
-    })
+    }),
   );
 
   return true;

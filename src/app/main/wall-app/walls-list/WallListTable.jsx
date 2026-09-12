@@ -45,7 +45,7 @@ const COLUMNS = [
           ))}
         </div>
       ) : (
-        <span className="text-gray-400 text-xs italic">—</span>
+        <span className="text-xs italic text-gray-400">—</span>
       ),
   },
   {
@@ -98,7 +98,9 @@ function WallListTable({ data, totalCount, isLoading }) {
       enqueueSnackbar('Question deleted', { variant: 'success' });
       setConfirmItem(null);
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Delete failed', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Delete failed', {
+        variant: 'error',
+      });
     }
   };
 

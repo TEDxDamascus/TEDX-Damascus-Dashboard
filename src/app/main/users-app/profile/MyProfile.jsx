@@ -122,7 +122,9 @@ function MyProfile() {
         confirmPassword: '',
       });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update profile', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to update profile', {
+        variant: 'error',
+      });
     }
   };
 

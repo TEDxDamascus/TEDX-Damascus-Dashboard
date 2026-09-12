@@ -101,7 +101,12 @@ function ExportPdfDialog({ open, onClose, questions, submission, formId }) {
   async function handleExport() {
     const result = await exportPdf({
       formId,
-      body: { userId: submission.userId, submissionId: submission.id, questionIds: [...selected], locale },
+      body: {
+        userId: submission.userId,
+        submissionId: submission.id,
+        questionIds: [...selected],
+        locale,
+      },
     });
     if (result.data) {
       const blob = new Blob([result.data], { type: 'application/pdf' });

@@ -118,9 +118,7 @@ const wallApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
         method: 'GET',
         params: { page, limit },
       }),
-      providesTags: (result, error, { questionId }) => [
-        { type: 'WallAnswers', id: questionId },
-      ],
+      providesTags: (result, error, { questionId }) => [{ type: 'WallAnswers', id: questionId }],
     }),
 
     moderateWallAnswer: builder.mutation({

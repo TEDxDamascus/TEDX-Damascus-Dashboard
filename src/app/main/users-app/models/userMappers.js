@@ -41,8 +41,7 @@ export function normalizeUser(raw = {}) {
  * Normalize paginated list response: { data, meta } or legacy shapes.
  */
 export function normalizeUsersList(response) {
-  const raw =
-    response?.data ?? response?.users ?? response?.items ?? response ?? [];
+  const raw = response?.data ?? response?.users ?? response?.items ?? response ?? [];
   const rawItems = Array.isArray(raw)
     ? raw
     : Array.isArray(raw?.data)

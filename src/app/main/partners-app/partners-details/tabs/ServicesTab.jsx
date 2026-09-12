@@ -7,7 +7,7 @@ import {
   defaultLocaleValue,
 } from '../../../../shared-components/locale-input';
 
-function ServicesTab({ control, register, errors }) {
+function ServicesTab({ control, errors }) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'services',
@@ -41,7 +41,7 @@ function ServicesTab({ control, register, errors }) {
 
       {fields.length === 0 ? (
         <Box className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center text-gray-400">
-          No services added . Click "Add Service" to add a service (optional).
+          No services added . Click &quot;Add Service&quot; to add a service (optional).
         </Box>
       ) : (
         <Grid container spacing={3}>

@@ -26,9 +26,7 @@ import { searchBlogCategoryOptions } from '../blog-categories/BlogCategoriesApi'
 import { blogReferencesFromApi, mapBlogFromApi, mapBlogReferenceApiItemToForm } from './blogMapper';
 import { ensureContentFont, contentFontToApiString } from './blogFontUtils';
 import { buildAuthorApiPayload } from './blogAuthorUtils';
-import {
-  mediaFormValueToApiId,
-} from '../../../shared-components/image-picker';
+import { mediaFormValueToApiId } from '../../../shared-components/image-picker';
 
 const localeObjectSchema = z.object({ ar: z.string(), en: z.string() });
 
@@ -41,45 +39,50 @@ const blogReferenceRowSchema = z.object({
   url: z.string().optional(),
 });
 
-const blogSchema = z.object({
-  title: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Title is required'),
-  slug: localeObjectSchema,
-  blog_image: z.union([mediaRefSchema, z.string()]).optional(),
-  read_time: z.coerce.number().min(0).optional(),
-  tags: z.array(z.string()).optional(),
-  author_type: z.enum(['', 'no_author', 'admin', 'external']).optional(),
-  author_name: localeObjectSchema.optional(),
-  author_description: localeObjectSchema.optional(),
-  author_image: z.union([mediaRefSchema, z.string()]).optional(),
-  author_image_url: z.string().optional(),
-  blog_category: z.union([z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
-  related_blogs: z.array(z.any()).optional(),
-  description: localeObjectSchema,
-  content: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Content is required'),
-  content_font: localeObjectSchema.optional(),
-  status: z.enum(['draft', 'published']).optional(),
-  meta_title: localeObjectSchema,
-  meta_description: localeObjectSchema,
-  meta_keywords: localeObjectSchema,
-  canonical_url: z.string().optional(),
-  og_image: z.union([mediaRefSchema, z.string()]).optional(),
-  og_title: localeObjectSchema,
-  og_description: localeObjectSchema,
-  blog_references: z.array(blogReferenceRowSchema).optional(),
-}).superRefine((data, ctx) => {
-  if (data.status !== 'published') return;
-  const type = String(data.author_type || '').toLowerCase();
-  if (type !== 'external' && type !== 'custom' && type !== 'admin') return;
-  const desc = data.author_description;
-  const hasDesc = Boolean(String(desc?.en || '').trim() || String(desc?.ar || '').trim());
-  if (!hasDesc) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Author description is required when an author is selected',
-      path: ['author_description'],
-    });
-  }
-});
+const blogSchema = z
+  .object({
+    title: localeObjectSchema.refine((v) => v?.en?.trim() || v?.ar?.trim(), 'Title is required'),
+    slug: localeObjectSchema,
+    blog_image: z.union([mediaRefSchema, z.string()]).optional(),
+    read_time: z.coerce.number().min(0).optional(),
+    tags: z.array(z.string()).optional(),
+    author_type: z.enum(['', 'no_author', 'admin', 'external']).optional(),
+    author_name: localeObjectSchema.optional(),
+    author_description: localeObjectSchema.optional(),
+    author_image: z.union([mediaRefSchema, z.string()]).optional(),
+    author_image_url: z.string().optional(),
+    blog_category: z.union([z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
+    related_blogs: z.array(z.any()).optional(),
+    description: localeObjectSchema,
+    content: localeObjectSchema.refine(
+      (v) => v?.en?.trim() || v?.ar?.trim(),
+      'Content is required',
+    ),
+    content_font: localeObjectSchema.optional(),
+    status: z.enum(['draft', 'published']).optional(),
+    meta_title: localeObjectSchema,
+    meta_description: localeObjectSchema,
+    meta_keywords: localeObjectSchema,
+    canonical_url: z.string().optional(),
+    og_image: z.union([mediaRefSchema, z.string()]).optional(),
+    og_title: localeObjectSchema,
+    og_description: localeObjectSchema,
+    blog_references: z.array(blogReferenceRowSchema).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status !== 'published') return;
+    const type = String(data.author_type || '').toLowerCase();
+    if (type !== 'external' && type !== 'custom' && type !== 'admin') return;
+    const desc = data.author_description;
+    const hasDesc = Boolean(String(desc?.en || '').trim() || String(desc?.ar || '').trim());
+    if (!hasDesc) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Author description is required when an author is selected',
+        path: ['author_description'],
+      });
+    }
+  });
 
 function sanitizeLocaleObject(value) {
   const localeValue = ensureLocaleValue(value);
@@ -410,7 +413,7 @@ function Blog() {
     }
 
     if (import.meta.env.DEV) {
-      console.log('[Blog] submit payload:', payload);
+      console.warn('[Blog] submit payload:', payload);
     }
 
     try {

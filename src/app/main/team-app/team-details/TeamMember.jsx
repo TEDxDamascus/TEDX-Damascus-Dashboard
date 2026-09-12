@@ -134,7 +134,9 @@ function TeamMember() {
         year: member.year ? String(member.year) : new Date().getFullYear().toString(),
         role: ensureLocaleValue(member.role),
         category: ensureLocaleValue(member.category),
-        events: toEventIds(member.events?.length ? member.events : member.event_id ? [member.event_id] : []),
+        events: toEventIds(
+          member.events?.length ? member.events : member.event_id ? [member.event_id] : [],
+        ),
         linkedin_url,
         twitter_url,
         facebook_url,

@@ -42,9 +42,7 @@ const organizerSchema = z.object({
   image: z.string().min(1, 'Image is required').url('Image must be a valid URL'),
   bio: translationDtoSchema('Bio'),
   role: z.string().min(1, 'Role is required'),
-  gallery: z
-    .array(z.string().url('Each gallery image must be a valid URL'))
-    .optional(),
+  gallery: z.array(z.string().url('Each gallery image must be a valid URL')).optional(),
   linkedin_url: z.string().optional(),
   twitter_url: z.string().optional(),
   facebook_url: z.string().optional(),

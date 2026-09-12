@@ -21,12 +21,7 @@ function pickPermissions(...sources) {
 }
 
 function buildSessionUser({ tokenUser, loginUser, profile }) {
-  const id =
-    profile?.id ||
-    profile?._id ||
-    loginUser?.id ||
-    loginUser?._id ||
-    tokenUser?.id;
+  const id = profile?.id || profile?._id || loginUser?.id || loginUser?._id || tokenUser?.id;
 
   const isActive =
     typeof profile?.isActive === 'boolean'

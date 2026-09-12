@@ -35,7 +35,9 @@ function BasicInfoTab({ control, errors }) {
                 label="Slug"
                 placeholder="e.g. john-doe"
                 error={!!errors.slug}
-                helperText={errors.slug?.message || errors.slug?.en?.message || errors.slug?.ar?.message}
+                helperText={
+                  errors.slug?.message || errors.slug?.en?.message || errors.slug?.ar?.message
+                }
               />
             )}
           />

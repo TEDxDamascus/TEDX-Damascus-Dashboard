@@ -49,8 +49,7 @@ const FONT_SIZE_OPTIONS = [
   { value: '36px', label: '36px' },
 ];
 
-const toolbarSelect =
-  'rounded border border-gray-200 bg-white px-2 py-1 text-sm text-gray-700';
+const toolbarSelect = 'rounded border border-gray-200 bg-white px-2 py-1 text-sm text-gray-700';
 
 function getActiveHeadingLevel(editor) {
   for (let level = 1; level <= 6; level += 1) {
@@ -250,11 +249,7 @@ export default function RichTextEditor({ value, onChange, placeholder, fontFamil
         </ToolbarTooltip>
 
         <ToolbarTooltip title="حجم الخط">
-          <select
-            value={activeFontSize}
-            onChange={handleFontSizeChange}
-            className={toolbarSelect}
-          >
+          <select value={activeFontSize} onChange={handleFontSizeChange} className={toolbarSelect}>
             {FONT_SIZE_OPTIONS.map((option) => (
               <option key={option.value || 'default'} value={option.value}>
                 {option.label}
@@ -316,7 +311,9 @@ export default function RichTextEditor({ value, onChange, placeholder, fontFamil
         <ToolbarTooltip title="لون التظليل">
           <input
             type="color"
-            onChange={(e) => editor.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+            onChange={(e) =>
+              editor.chain().focus().toggleHighlight({ color: e.target.value }).run()
+            }
             className="h-8 w-8 cursor-pointer rounded border border-gray-200"
           />
         </ToolbarTooltip>

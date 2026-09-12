@@ -374,7 +374,9 @@ export default function HomeSettingsPage() {
       await updateSettings({ id: data?.id, data: toApiPayload(sections) }).unwrap();
       enqueueSnackbar('Settings saved successfully', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save settings', { variant: 'error' });
+      enqueueSnackbar(error?.data?.message ?? error?.message ?? 'Failed to save settings', {
+        variant: 'error',
+      });
     }
   };
 

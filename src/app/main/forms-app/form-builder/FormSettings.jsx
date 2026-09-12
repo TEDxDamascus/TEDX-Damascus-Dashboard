@@ -108,7 +108,7 @@ function ShareableUrlPanel({ url }) {
   );
 }
 
-export default function FormSettings({ control, shareableUrl }) {
+export default function FormSettings({ control, shareableUrl, events = [], isLoadingEvents }) {
   const selectSx = {
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-primary)' },
     '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-primary)' },
@@ -181,6 +181,47 @@ export default function FormSettings({ control, shareableUrl }) {
               </FormControl>
             )}
           />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">Event</label>
+          <Controller
+            name="eventId"
+            control={control}
+            render={({ field }) => (
+              <FormControl size="small" fullWidth>
+                <InputLabel sx={{ '&.Mui-focused': { color: 'var(--color-primary)' } }}>
+                  Linked Event
+                </InputLabel>
+                <Select
+                  {...field}
+                  value={field.value ?? ''}
+                  label="Linked Event"
+                  sx={selectSx}
+                  MenuProps={menuSx}
+                  displayEmpty
+                >
+                  <MenuItem value="">
+                    <span className="text-gray-400">None</span>
+                  </MenuItem>
+                  {isLoadingEvents && (
+                    <MenuItem disabled value="__loading__">
+                      Loading events…
+                    </MenuItem>
+                  )}
+                  {events.map((event) => (
+                    <MenuItem key={event.id} value={event.id}>
+                      {event.title?.en || event.title?.ar || event.id}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Linking an event lets submissions to this form be added to that event&apos;s attendance
+            list.
+          </p>
         </div>
       </div>
 

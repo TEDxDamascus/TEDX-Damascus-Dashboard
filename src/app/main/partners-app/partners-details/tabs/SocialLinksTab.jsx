@@ -1,19 +1,13 @@
 import { Controller } from 'react-hook-form';
 import { TextField, Grid, Box, Typography } from '@mui/material';
-import {
-  LocaleInput,
-  localeInputTypes,
-} from '../../../../shared-components/locale-input';
+import { LocaleInput, localeInputTypes } from '../../../../shared-components/locale-input';
 
 function SocialLinksTab({ control, errors }) {
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Typography
-            variant="h6"
-            className="mb-2 text-gray-700 font-medium"
-          >
+          <Typography variant="h6" className="mb-2 font-medium text-gray-700">
             Social Links
           </Typography>
         </Grid>
@@ -28,24 +22,15 @@ function SocialLinksTab({ control, errors }) {
                 label="Website URL"
                 fullWidth
                 placeholder="https://example.com"
-                error={
-                  !!errors.social_links?.[0] ||
-                  !!errors.social_links?.message
-                }
-                helperText={
-                  errors.social_links?.[0]?.message ||
-                  errors.social_links?.message
-                }
+                error={!!errors.social_links?.[0] || !!errors.social_links?.message}
+                helperText={errors.social_links?.[0]?.message || errors.social_links?.message}
               />
             )}
           />
         </Grid>
 
         <Grid item xs={12} className="mt-4">
-          <Typography
-            variant="h6"
-            className="mb-2 text-gray-700 font-medium"
-          >
+          <Typography variant="h6" className="mb-2 font-medium text-gray-700">
             Contact Information
           </Typography>
         </Grid>

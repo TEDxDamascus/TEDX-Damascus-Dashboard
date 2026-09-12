@@ -172,7 +172,12 @@ function BasicInfoTab({
             name="role"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth required error={!!errors.role} disabled={isDisabled || lockRole}>
+              <FormControl
+                fullWidth
+                required
+                error={!!errors.role}
+                disabled={isDisabled || lockRole}
+              >
                 <InputLabel>Role</InputLabel>
                 <Select {...field} label="Role">
                   <MenuItem value="user">User</MenuItem>
