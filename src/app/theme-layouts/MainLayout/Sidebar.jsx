@@ -24,6 +24,7 @@ import {
   LabelOutlined,
   Handshake,
   Forum,
+  HowToReg,
 } from '@mui/icons-material';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -37,6 +38,7 @@ const menuItems = [
   { text: 'Team', icon: <GroupsIcon />, path: '/team' },
   { text: 'Organizers', icon: <ManageAccountsIcon />, path: '/organizers' },
   { text: 'Forms', icon: <Assignment />, path: '/forms' },
+  { text: 'Attendance', icon: <HowToReg />, path: '/attendance' },
   { text: 'Events', icon: <Event />, path: '/events' },
   { text: 'Wall', icon: <Forum />, path: '/wall' },
   { text: 'Blog', icon: <Article />, path: '/blogs' },

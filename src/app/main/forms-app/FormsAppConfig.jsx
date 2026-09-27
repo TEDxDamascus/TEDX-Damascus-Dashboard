@@ -33,6 +33,10 @@ const FormsAppConfig = {
         },
       ],
     },
+    {
+      path: '/attendance',
+      element: <AttendanceList />,
+    },
   ],
 };
 
