@@ -61,6 +61,7 @@ const eventsApi = apiService.injectEndpoints({
 
       transformResponse: (response) => {
         const e = response?.data;
+        const seo = e?.seo && typeof e.seo === 'object' ? e.seo : null;
 
         return {
           id: e._id,
@@ -85,6 +86,15 @@ const eventsApi = apiService.injectEndpoints({
               : { id: s, label: s },
           ),
           gallery: e.gallery ?? [],
+
+          // SEO / Open Graph (read from root fields, falling back to a nested `seo` object).
+          meta_title: e.meta_title ?? seo?.meta_title ?? { en: '', ar: '' },
+          meta_description: e.meta_description ?? seo?.meta_description ?? { en: '', ar: '' },
+          meta_keywords: e.meta_keywords ?? seo?.meta_keywords ?? { en: '', ar: '' },
+          canonical_url: e.canonical_url ?? seo?.canonical_url ?? '',
+          og_title: e.og_title ?? seo?.og_title ?? { en: '', ar: '' },
+          og_description: e.og_description ?? seo?.og_description ?? { en: '', ar: '' },
+          og_image: e.og_image ?? seo?.og_image ?? '',
         };
       },
 

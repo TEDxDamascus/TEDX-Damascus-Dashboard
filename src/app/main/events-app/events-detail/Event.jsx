@@ -12,6 +12,7 @@ import { useGetEventQuery, useCreateEventMutation, useUpdateEventMutation } from
 
 import BasicInfoTab from './tabs/BasicInfoTab';
 import SocialLinksTab from './tabs/SocialLinksTab';
+import SeoTab from './tabs/SeoTab';
 import EventModel from './models/events-model';
 import { ensureLocaleValue } from '../../../shared-components/locale-input';
 import { assignOptionalArray, assignOptionalString, getApiErrorMessage } from '../../../shared/apiError';
@@ -49,7 +50,40 @@ const eventSchema = z.object({
   speakers: z.array(z.any()).optional(),
 
   status: z.string().optional(),
+
+  // SEO / Open Graph
+  meta_title: localeObjectSchema.optional(),
+  meta_description: localeObjectSchema.optional(),
+  meta_keywords: localeObjectSchema.optional(),
+  canonical_url: z.string().optional(),
+  og_title: localeObjectSchema.optional(),
+  og_description: localeObjectSchema.optional(),
+  og_image: z.string().optional(),
 });
+
+/** API may send meta_keywords as { en: [], ar: [] } arrays — flatten to a comma string for the form. */
+const keywordsApiToLocaleString = (meta) => {
+  if (meta && typeof meta === 'object' && !Array.isArray(meta)) {
+    const join = (arr) =>
+      Array.isArray(arr) ? arr.map((s) => String(s || '').trim()).filter(Boolean).join(', ') : '';
+    if (Array.isArray(meta.en) || Array.isArray(meta.ar)) {
+      return { en: join(meta.en), ar: join(meta.ar) };
+    }
+    return { en: String(meta.en ?? ''), ar: String(meta.ar ?? '') };
+  }
+  if (typeof meta === 'string') return { en: meta, ar: '' };
+  return { en: '', ar: '' };
+};
+
+/** Form comma string -> API keyword arrays. */
+const keywordsLocaleStringToApi = (obj) => {
+  const split = (s) =>
+    String(s || '')
+      .split(/[,،]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  return { en: split(obj?.en), ar: split(obj?.ar) };
+};
 
 function Event() {
   const { eventId } = useParams();
@@ -105,6 +139,13 @@ function Event() {
         event_type: event.event_type ?? '',
         event_image: event.event_image ?? '',
         status: event.status ?? 'draft',
+        meta_title: ensureLocaleValue(event.meta_title),
+        meta_description: ensureLocaleValue(event.meta_description),
+        meta_keywords: keywordsApiToLocaleString(event.meta_keywords),
+        canonical_url: event.canonical_url ?? '',
+        og_title: ensureLocaleValue(event.og_title),
+        og_description: ensureLocaleValue(event.og_description),
+        og_image: event.og_image ?? '',
       });
     }
   }, [event, isNew, reset]);
@@ -151,6 +192,26 @@ function Event() {
       if (data.brief?.en?.trim() || data.brief?.ar?.trim() || !isNew) {
         payload.brief = localeField(data.brief);
       }
+
+      // ── SEO / Open Graph ──
+      // Send locale meta fields when they have content (or when editing, to allow clearing).
+      const addSeoLocale = (key, value) => {
+        if (value?.en?.trim() || value?.ar?.trim() || !isNew) {
+          payload[key] = localeField(value);
+        }
+      };
+      addSeoLocale('meta_title', data.meta_title);
+      addSeoLocale('meta_description', data.meta_description);
+      addSeoLocale('og_title', data.og_title);
+      addSeoLocale('og_description', data.og_description);
+
+      const keywords = keywordsLocaleStringToApi(data.meta_keywords);
+      if (keywords.en.length || keywords.ar.length || !isNew) {
+        payload.meta_keywords = keywords;
+      }
+
+      assignOptionalString(payload, 'canonical_url', data.canonical_url, !isNew);
+      assignOptionalString(payload, 'og_image', data.og_image, !isNew);
 
       if (isNew) {
         await createEvent(payload).unwrap();
@@ -246,12 +307,15 @@ function Event() {
         >
           <Tab label="Basic Information" />
           <Tab label="Location & Media" />
+          <Tab label="SEO" />
         </Tabs>
 
         <Box>
           {currentTab === 0 && <BasicInfoTab control={control} errors={errors} />}
 
           {currentTab === 1 && <SocialLinksTab control={control} errors={errors} />}
+
+          {currentTab === 2 && <SeoTab control={control} errors={errors} />}
         </Box>
       </Paper>
     </div>
