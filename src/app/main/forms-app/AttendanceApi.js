@@ -5,7 +5,7 @@ export const addTagTypes = ['Attendance'];
 const attendanceApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoints({
   endpoints: (builder) => ({
     getAttendanceList: builder.query({
-      query: ({ eventId, page = 1, pageSize = 10 }) => ({
+      query: ({ eventId, page = 1, pageSize = 50 }) => ({
         url: '/attendance',
         method: 'GET',
         params: { eventId, page, limit: pageSize },
@@ -18,7 +18,7 @@ const attendanceApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoin
             items,
             total: raw.total ?? items.length,
             page: raw.page ?? 1,
-            pageSize: raw.limit ?? 10,
+            pageSize: raw.limit ?? 50,
           },
         };
       },
@@ -30,6 +30,15 @@ const attendanceApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoin
         url: '/attendance/from-submissions',
         method: 'POST',
         data: { eventId, submissionIds },
+      }),
+      invalidatesTags: ['Attendance'],
+    }),
+
+    addAttendanceManually: builder.mutation({
+      query: ({ eventId, attendees }) => ({
+        url: '/attendance/manual',
+        method: 'POST',
+        data: { eventId, attendees },
       }),
       invalidatesTags: ['Attendance'],
     }),
@@ -49,6 +58,7 @@ const attendanceApi = apiService.enhanceEndpoints({ addTagTypes }).injectEndpoin
 export const {
   useGetAttendanceListQuery,
   useAddToAttendanceFromSubmissionsMutation,
+  useAddAttendanceManuallyMutation,
   useInviteAttendanceListMutation,
 } = attendanceApi;
 
